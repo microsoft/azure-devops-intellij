@@ -8,11 +8,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,19 +19,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ApplicationNamesInfo.class})
+@RunWith(MockitoJUnitRunner.class)
 public class IdeaHelperTest {
     public File mockExecutable = Mockito.mock(File.class);
 
     @Mock
     private ApplicationNamesInfo mockApplicationNamesInfo;
 
+    @Mock
+    private MockedStatic<ApplicationNamesInfo> applicationNamesInfoStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ApplicationNamesInfo.class);
-        when(ApplicationNamesInfo.getInstance()).thenReturn(mockApplicationNamesInfo);
+        applicationNamesInfoStatic.when(ApplicationNamesInfo::getInstance).thenReturn(mockApplicationNamesInfo);
     }
 
     @Test

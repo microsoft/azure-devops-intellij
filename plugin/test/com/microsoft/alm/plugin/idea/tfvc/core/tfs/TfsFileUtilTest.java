@@ -4,18 +4,23 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusFactory;
+import com.intellij.openapi.vcs.FileStatusFactoryImpl;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class TfsFileUtilTest {
+@RunWith(MockitoJUnitRunner.class)
+public class TfsFileUtilTest extends MockedIdeaApplicationTest {
     @Mock
     FileStatusManager fileStatusManager;
 
@@ -28,16 +33,18 @@ public class TfsFileUtilTest {
     @Mock
     VirtualFile virtualDirectory;
 
-
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        when(mockApplication.getService(FileStatusFactory.class)).thenReturn(new FileStatusFactoryImpl());
+
         when(virtualDirectory.isDirectory()).thenReturn(true);
         when(virtualFileAdded.isDirectory()).thenReturn(false);
         when(virtualFileUnknown.isDirectory()).thenReturn(false);
 
-        when(fileStatusManager.getStatus(virtualFileAdded)).thenReturn(FileStatus.ADDED);
-        when(fileStatusManager.getStatus(virtualFileUnknown)).thenReturn(FileStatus.UNKNOWN);
+        var added = FileStatus.ADDED;
+        var unknown = FileStatus.UNKNOWN;
+        when(fileStatusManager.getStatus(virtualFileAdded)).thenReturn(added);
+        when(fileStatusManager.getStatus(virtualFileUnknown)).thenReturn(unknown);
     }
 
     @Test

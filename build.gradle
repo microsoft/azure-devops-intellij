@@ -155,6 +155,8 @@ project(':plugin:test-utils') {
     intellij {
         version = ideaVersion
     }
+
+    buildSearchableOptions.enabled = false
 }
 
 project(":L2Tests") {

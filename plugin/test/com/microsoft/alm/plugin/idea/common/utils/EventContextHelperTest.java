@@ -13,31 +13,29 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerEventManager.class})
+@RunWith(MockitoJUnitRunner.class)
 public class EventContextHelperTest extends IdeaAbstractTest {
 
     @Mock
     public ServerEventManager serverEventManager;
 
+    @Mock
+    private MockedStatic<ServerEventManager> serverEventManagerStatic;
+
     @Before
     public void setupLocalTests() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ServerEventManager.class);
-        when(ServerEventManager.getInstance()).thenReturn(serverEventManager);
+        //noinspection ResultOfMethodCallIgnored
+        serverEventManagerStatic.when(ServerEventManager::getInstance).thenReturn(serverEventManager);
     }
 
     @Test

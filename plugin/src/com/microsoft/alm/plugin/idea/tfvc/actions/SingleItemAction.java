@@ -54,8 +54,10 @@ import java.util.List;
 public abstract class SingleItemAction extends DumbAwareAction {
     protected static final Logger logger = LoggerFactory.getLogger(SingleItemAction.class);
 
-    private static final Collection<FileStatus> ALLOWED_STATUSES =
-            Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE);
+    private static class AllowedStatusHolderLazyInit {
+        private static final Collection<FileStatus> ALLOWED_STATUSES =
+                Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE);
+    }
 
     protected SingleItemAction(final String text, final String description) {
         super(text, description, null);
@@ -64,7 +66,7 @@ public abstract class SingleItemAction extends DumbAwareAction {
     protected abstract void execute(final @NotNull SingleItemActionContext actionContext) throws TfsException;
 
     protected Collection<FileStatus> getAllowedStatuses() {
-        return ALLOWED_STATUSES;
+        return AllowedStatusHolderLazyInit.ALLOWED_STATUSES;
     }
 
     public void actionPerformed(final AnActionEvent e) {

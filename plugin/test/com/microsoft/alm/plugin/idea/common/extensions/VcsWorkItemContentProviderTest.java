@@ -11,67 +11,67 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsHelper.class, IdeaHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VcsWorkItemContentProviderTest extends IdeaAbstractTest {
     private VcsWorkItemContentProvider.VcsWorkItemVisibilityPredicate vcsWorkItemVisibilityPredicate;
 
     @Mock
     private Project mockProject;
 
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelper;
+
+    @Mock
+    private MockedStatic<IdeaHelper> ideaHelper;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(VcsHelper.class, IdeaHelper.class);
         vcsWorkItemVisibilityPredicate = new VcsWorkItemContentProvider.VcsWorkItemVisibilityPredicate();
     }
 
     @Test
     public void testTabEnabled_NotGitNotVsts() {
-        when(IdeaHelper.isRider()).thenReturn(false);
-        when(VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
-        when(VcsHelper.isTfVcs(mockProject)).thenReturn(false);
+        ideaHelper.when(IdeaHelper::isRider).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isTfVcs(mockProject)).thenReturn(false);
         assertFalse(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 
     @Test
     public void testTabEnabled_NotRiderGit() {
-        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
-        when(VcsHelper.isTfVcs(mockProject)).thenReturn(false);
-        when(IdeaHelper.isRider()).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isGitVcs(mockProject)).thenReturn(true);
+        vcsHelper.when(() -> VcsHelper.isTfVcs(mockProject)).thenReturn(false);
+        ideaHelper.when(IdeaHelper::isRider).thenReturn(false);
         assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 
     @Test
     public void testTabEnabled_NotRiderTfvc() {
-        when(VcsHelper.isGitVcs(mockProject)).thenReturn(false);
-        when(VcsHelper.isTfVcs(mockProject)).thenReturn(true);
-        when(IdeaHelper.isRider()).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isGitVcs(mockProject)).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isTfVcs(mockProject)).thenReturn(true);
+        ideaHelper.when(IdeaHelper::isRider).thenReturn(false);
         assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 
     @Test
     public void testTabEnabled_RiderVsts() {
-        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
-        when(IdeaHelper.isRider()).thenReturn(true);
-        when(VcsHelper.isVstsRepo(mockProject)).thenReturn(true);
+        vcsHelper.when(() -> VcsHelper.isGitVcs(mockProject)).thenReturn(true);
+        ideaHelper.when(IdeaHelper::isRider).thenReturn(true);
+        vcsHelper.when(() -> VcsHelper.isVstsRepo(mockProject)).thenReturn(true);
         assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 
     @Test
     public void testTabEnabled_RiderNotVsts() {
-        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
-        when(IdeaHelper.isRider()).thenReturn(true);
-        when(VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
+        vcsHelper.when(() -> VcsHelper.isGitVcs(mockProject)).thenReturn(true);
+        ideaHelper.when(IdeaHelper::isRider).thenReturn(true);
+        vcsHelper.when(() -> VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
         assertFalse(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 }

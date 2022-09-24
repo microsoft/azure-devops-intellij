@@ -16,11 +16,10 @@ import com.microsoft.alm.plugin.operations.Operation;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,9 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ActionManager.class})
-@PowerMockIgnore("javax.swing.*")
+@RunWith(MockitoJUnitRunner.class)
 public class TabFormImplTest extends IdeaAbstractTest {
     private final String TAB_TITLE = TfPluginBundle.KEY_VCS_WIT_TITLE;
     private final String CREATE_DIALOG_TITLE = TfPluginBundle.KEY_VCS_WIT_CREATE_WIT;
@@ -41,6 +38,9 @@ public class TabFormImplTest extends IdeaAbstractTest {
     private final String TOOLBAR_LOCATION = "toolbarLocation";
 
     TabFormImpl underTest;
+
+    @Mock
+    private MockedStatic<ActionManager> actionManagerStatic;
 
     @Before
     @SuppressWarnings("unchecked")
@@ -82,9 +82,8 @@ public class TabFormImplTest extends IdeaAbstractTest {
         underTest.statusLink = new Hyperlink();
 
         // Mock needed for creating DefaultActionGroup in create group tests
-        PowerMockito.mockStatic(ActionManager.class);
         ActionManager actionManager = Mockito.mock(ActionManager.class);
-        Mockito.when(ActionManager.getInstance()).thenReturn(actionManager);
+        actionManagerStatic.when(ActionManager::getInstance).thenReturn(actionManager);
     }
 
     @Test

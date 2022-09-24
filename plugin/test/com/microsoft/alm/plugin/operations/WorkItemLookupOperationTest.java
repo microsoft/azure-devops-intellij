@@ -6,49 +6,53 @@ package com.microsoft.alm.plugin.operations;
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
-import com.microsoft.alm.workitemtracking.webapi.models.Wiql;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
-import com.microsoft.alm.workitemtracking.webapi.models.WorkItemExpand;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItemQueryResult;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItemReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerContextManager.class})
+@RunWith(MockitoJUnitRunner.class)
 public class WorkItemLookupOperationTest extends AbstractTest {
     private ServerContextManager serverContextManager;
 
-    private void setupLocalTests(List<WorkItem> workItems) {
-        MockitoAnnotations.initMocks(this);
+    @Mock
+    private MockedStatic<ServerContextManager> serverContextManagerStatic;
 
+    @Mock
+    private OperationExecutor operationExecutor;
+
+    @Mock
+    private MockedStatic<OperationExecutor> operationExecutorStatic;
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private void setupLocalTests(List<WorkItem> workItems) {
         WorkItemReference ref = new WorkItemReference();
         ref.setId(1);
         List<WorkItemReference> workItemRefs = new ArrayList<WorkItemReference>();
@@ -57,24 +61,28 @@ public class WorkItemLookupOperationTest extends AbstractTest {
         result.setWorkItems(workItemRefs);
 
         WorkItemTrackingHttpClient witHttpClient = Mockito.mock(WorkItemTrackingHttpClient.class);
-        when(witHttpClient.queryByWiql(any(Wiql.class), any(UUID.class)))
+        when(witHttpClient.queryByWiql(any(), ArgumentMatchers.<UUID>any()))
                 .thenReturn(result);
-        when(witHttpClient.getWorkItems(anyList(), anyList(), any(Date.class), any(WorkItemExpand.class)))
+        when(witHttpClient.getWorkItems(any(), any(), any(), any()))
                 .thenReturn(workItems);
 
-        AuthenticationInfo authInfo = new AuthenticationInfo("user", "pass", "serverURI", "user");
         ServerContext authenticatedContext = Mockito.mock(ServerContext.class);
         when(authenticatedContext.getWitHttpClient()).thenReturn(witHttpClient);
         when(authenticatedContext.getTeamProjectReference()).thenReturn(new TeamProjectReference());
-        when(authenticatedContext.getGitRepository()).thenReturn(new GitRepository());
+        lenient().when(authenticatedContext.getGitRepository()).thenReturn(new GitRepository());
 
         serverContextManager = Mockito.mock(ServerContextManager.class);
-        when(serverContextManager.getAuthenticatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
-        when(serverContextManager.getUpdatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromGitRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
+        when(serverContextManager.getUpdatedContext(any(), anyBoolean())).thenReturn(authenticatedContext);
 
-        PowerMockito.mockStatic(ServerContextManager.class);
-        when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
+        serverContextManagerStatic.when(ServerContextManager::getInstance).thenReturn(serverContextManager);
+        operationExecutorStatic.when(OperationExecutor::getInstance).thenReturn(operationExecutor);
+
+        // Execute tasks synchronously for thread local static mocks to work:
+        when(operationExecutor.submitOperationTask(any())).thenAnswer(a -> {
+            var task = (Runnable)a.getArguments()[0];
+            task.run();
+            return CompletableFuture.completedFuture(null);
+        });
     }
 
     @Test
@@ -124,8 +132,8 @@ public class WorkItemLookupOperationTest extends AbstractTest {
             }
         });
         operation.doWork(new WorkItemLookupOperation.WitInputs("query"));
-        Assert.assertTrue(startedCalled.get(1, TimeUnit.SECONDS));
-        Assert.assertTrue(completedCalled.get(1, TimeUnit.SECONDS));
+        assertTrue(startedCalled.get(1, TimeUnit.SECONDS));
+        assertTrue(completedCalled.get(1, TimeUnit.SECONDS));
         WorkItemLookupOperation.WitResults results = witResults.get(1, TimeUnit.SECONDS);
         Assert.assertNull(results.getError());
         Assert.assertEquals(1, results.getWorkItems().size());
@@ -160,8 +168,8 @@ public class WorkItemLookupOperationTest extends AbstractTest {
             }
         });
         operation.doWork(new WorkItemLookupOperation.WitInputs("query"));
-        Assert.assertTrue(startedCalled.get(1, TimeUnit.SECONDS));
-        Assert.assertTrue(completedCalled.get(1, TimeUnit.SECONDS));
+        assertTrue(startedCalled.get(1, TimeUnit.SECONDS));
+        assertTrue(completedCalled.get(1, TimeUnit.SECONDS));
         Assert.assertEquals(NullPointerException.class, witResults.get(1, TimeUnit.SECONDS).getError().getClass());
     }
 

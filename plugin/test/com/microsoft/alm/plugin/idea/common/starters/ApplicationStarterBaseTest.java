@@ -14,19 +14,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Mockito.when;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FileDocumentManager.class, ApplicationManager.class, TeamServicesSettingsService.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ApplicationStarterBaseTest extends IdeaAbstractTest {
     public final String URI_ARG = "vsoi://checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
     public final String URI_MINUS_PREFIX = "checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
@@ -61,16 +56,21 @@ public class ApplicationStarterBaseTest extends IdeaAbstractTest {
         }
     };
 
+    @Mock
+    private MockedStatic<FileDocumentManager> fileDocumentManager;
+
+    @Mock
+    private MockedStatic<ApplicationManager> applicationManager;
+
+    @Mock
+    private MockedStatic<TeamServicesSettingsService> teamServicesSettingsServiceStatic;
+
     @Before
     public void setupLocalTests() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(FileDocumentManager.class);
-        PowerMockito.mockStatic(ApplicationManager.class);
-        when(FileDocumentManager.getInstance()).thenReturn(mockFileDocumentManager);
-        when(ApplicationManager.getApplication()).thenReturn(mockApplication);
-
-        PowerMockito.mockStatic(TeamServicesSettingsService.class);
-        when(TeamServicesSettingsService.getInstance()).thenReturn(teamServicesSettingsService);
+        fileDocumentManager.when(FileDocumentManager::getInstance).thenReturn(mockFileDocumentManager);
+        applicationManager.when(ApplicationManager::getApplication).thenReturn(mockApplication);
+        teamServicesSettingsServiceStatic.when(TeamServicesSettingsService::getInstance)
+                .thenReturn(teamServicesSettingsService);
 
         processCommandArgs = Collections.emptyList();
         processUriArgs  = StringUtils.EMPTY;

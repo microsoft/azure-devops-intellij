@@ -20,10 +20,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -38,10 +38,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CreateBranchController.class, VcsWorkItemsModel.class, VcsHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     private VcsWorkItemsModel model;
     private WorkItemLookupOperation operation;
@@ -52,13 +50,13 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     private GitRepository mockGitRepository;
     @Mock
     private WorkItemsTableModel mockTableModel;
+
     @Mock
-    private CreateBranchController mockCreateBranchController;
+    private MockedStatic<VcsHelper> vcsHelper;
 
     @Before
     public void setUp() {
-        PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(
+        vcsHelper.when(() -> VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(
                 RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("http://repoUrl1")));
 
         model = new VcsWorkItemsModel(mockProject);
@@ -116,26 +114,30 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testCreateBranch_CreateBranchFailed() throws Exception {
-        setupBranchCreate(true, "branchName", false);
-        VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
-        spyModel.createBranch();
+    public void testCreateBranch_CreateBranchFailed() {
+        try (var construction = setupBranchCreate(true, "branchName", false)) {
+            VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
+            spyModel.createBranch();
 
-        verify(mockCreateBranchController, times(1)).showModalDialog();
-        verify(mockCreateBranchController, times(1)).getBranchName();
-        verify(spyModel, never()).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+            var controller = getController(construction);
+            verify(controller, times(1)).showModalDialog();
+            verify(controller, times(1)).getBranchName();
+            verify(spyModel, never()).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+        }
     }
 
     @Test
-    public void testCreateBranch_Canceled() throws Exception {
-        setupBranchCreate(false, null, false);
-        VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
-        spyModel.createBranch();
+    public void testCreateBranch_Canceled() {
+        try (var construction = setupBranchCreate(false, null, false)) {
+            VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
+            spyModel.createBranch();
 
-        verify(mockCreateBranchController, times(1)).showModalDialog();
-        verify(mockCreateBranchController, never()).getBranchName();
-        verify(mockCreateBranchController, never()).createBranch(any(ServerContext.class));
-        verify(spyModel, never()).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+            var controller = getController(construction);
+            verify(controller, times(1)).showModalDialog();
+            verify(controller, never()).getBranchName();
+            verify(controller, never()).createBranch(any(ServerContext.class));
+            verify(spyModel, never()).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+        }
     }
 
     @Test
@@ -160,17 +162,29 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
         assertEquals(WorkItemHelper.getAssignedToMeQuery(), inputs.getQuery());
     }
 
-    private void setupBranchCreate(boolean showDialog, String branchName, boolean createBranch) throws Exception {
+    private MockedConstruction<CreateBranchController> setupBranchCreate(
+            boolean showDialog,
+            String branchName,
+            boolean createBranch) {
         // mock branch controller for when its created
-        when(mockCreateBranchController.showModalDialog()).thenReturn(showDialog);
-        when(mockCreateBranchController.getBranchName()).thenReturn(branchName);
-        when(mockCreateBranchController.createBranch(any(ServerContext.class))).thenReturn(createBranch);
-        whenNew(CreateBranchController.class).withAnyArguments().thenReturn(mockCreateBranchController);
+        var construction = Mockito.mockConstruction(CreateBranchController.class, (controller, c) -> {
+            when(controller.showModalDialog()).thenReturn(showDialog);
+            when(controller.getBranchName()).thenReturn(branchName);
+            when(controller.createBranch(any(ServerContext.class))).thenReturn(createBranch);
+        });
 
         // mock work item
-        final WorkItem item = new WorkItem();
+        var item = new WorkItem();
         item.setId(10);
         when(mockTableModel.getSelectedWorkItems()).thenReturn(ImmutableList.of(item));
+
+        return construction;
+    }
+
+    private CreateBranchController getController(MockedConstruction<CreateBranchController> construction) {
+        var controllers = construction.constructed();
+        assertEquals(1, controllers.size());
+        return controllers.get(0);
     }
 
     private WorkItemLookupOperation.WitResults createResults(final int numberOfItems, final int startingIndex) {

@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.extensions;
 
 import com.microsoft.alm.plugin.external.tools.TfTool;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.tfvc.FileSystemTestUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
@@ -18,29 +17,27 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ClassicTfvcClient.class, CommandUtils.class, TfTool.class, TfvcWorkspaceLocator.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TfvcRootCheckerTests extends IdeaAbstractTest {
     private final TfvcRootChecker checker = new TfvcRootChecker();
 
+    @Mock
+    private MockedStatic<ClassicTfvcClient> classicTfvcClientStatic;
+
     @Before
     public void setUp() {
-        PowerMockito.mockStatic(
-                ClassicTfvcClient.class,
-                TfvcWorkspaceLocator.class);
-        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+        classicTfvcClientStatic.when(ClassicTfvcClient::getInstance).thenReturn(new ClassicTfvcClient());
     }
 
     @Test
@@ -57,19 +54,26 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
         Assert.assertEquals(TFSVcs.getKey(), checker.getSupportedVcs());
     }
 
-    private static void mockTfToolPath(String path) {
-        PowerMockito.mockStatic(TfTool.class);
-        when(TfTool.getLocation()).thenReturn(path);
+    private static AutoCloseable mockTfToolPath(String path) {
+        var tfToolStatic = Mockito.mockStatic(TfTool.class);
+        tfToolStatic.when(TfTool::getLocation).thenReturn(path);
+        return tfToolStatic;
     }
 
-    private static void mockPartialWorkspace(Path path, TfsDetailedWorkspaceInfo workspace) {
-        PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class))).thenReturn(workspace);
+    private static AutoCloseable mockPartialWorkspace(Path path, TfsDetailedWorkspaceInfo workspace) {
+        var tfvcWorkspaceLocatorStatic = Mockito.mockStatic(TfvcWorkspaceLocator.class);
+        tfvcWorkspaceLocatorStatic.when(
+                () -> TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class)))
+                .thenReturn(workspace);
+        return tfvcWorkspaceLocatorStatic;
     }
 
-    private static void mockPartialWorkspaceNotDetermined(Path path) {
-        PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class))).thenReturn(null);
+    private static AutoCloseable mockPartialWorkspaceNotDetermined(Path path) {
+        var tfvcWorkspaceLocatorStatic = Mockito.mockStatic(TfvcWorkspaceLocator.class);
+        tfvcWorkspaceLocatorStatic.when(
+                () -> TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class)))
+                .thenReturn(null);
+        return tfvcWorkspaceLocatorStatic;
     }
 
     private static TfsDetailedWorkspaceInfo createWorkspaceWithMapping(String localPath) {
@@ -81,46 +85,46 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
     }
 
     @Test
-    public void isRootTestNoSettings() throws IOException {
+    public void isRootTestNoSettings() throws Exception {
         Path path = FileSystemTestUtil.createTempFileSystem();
-        mockTfToolPath("");
-
-        Assert.assertFalse(checker.isRoot(path.toString()));
+        try (var ignored = mockTfToolPath("")) {
+            Assert.assertFalse(checker.isRoot(path.toString()));
+        }
     }
 
     @Test
-    public void isRootTestNoWorkspace() throws IOException {
+    public void isRootTestNoWorkspace() throws Exception {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
-        mockTfToolPath("tf.cmd");
-        mockPartialWorkspace(path, null);
-
-        Assert.assertFalse(checker.isRoot(path.toString()));
+        try (var ignored1 = mockTfToolPath("tf.cmd");
+             var ignored2 = mockPartialWorkspace(path, null)) {
+            Assert.assertFalse(checker.isRoot(path.toString()));
+        }
     }
 
     @Test
-    public void isRootTestWorkspaceNotDetermined() throws IOException {
+    public void isRootTestWorkspaceNotDetermined() throws Exception {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
-        mockTfToolPath("tf.cmd");
-        mockPartialWorkspaceNotDetermined(path);
-
-        Assert.assertFalse(checker.isRoot(path.toString()));
+        try (var ignored1 = mockTfToolPath("tf.cmd");
+             var ignored2 = mockPartialWorkspaceNotDetermined(path)) {
+            Assert.assertFalse(checker.isRoot(path.toString()));
+        }
     }
 
     @Test
-    public void isRootTestNotMapped() throws IOException {
+    public void isRootTestNotMapped() throws Exception {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
-        mockTfToolPath("tf.cmd");
-        mockPartialWorkspace(path, createWorkspaceWithMapping("someOtherLocalPath"));
-
-        Assert.assertFalse(checker.isRoot(path.toString()));
+        try (var ignored1 = mockTfToolPath("tf.cmd");
+             var ignored2 = mockPartialWorkspace(path, createWorkspaceWithMapping("someOtherLocalPath"))) {
+            Assert.assertFalse(checker.isRoot(path.toString()));
+        }
     }
 
     @Test
-    public void isRootTestMapped() throws IOException {
+    public void isRootTestMapped() throws Exception {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
-        mockTfToolPath("tf.cmd");
-        mockPartialWorkspace(path, createWorkspaceWithMapping(path.toString()));
-
-        Assert.assertTrue(checker.isRoot(path.toString()));
+        try (var ignored1 = mockTfToolPath("tf.cmd");
+             var ignored2 = mockPartialWorkspace(path, createWorkspaceWithMapping(path.toString()))) {
+            Assert.assertTrue(checker.isRoot(path.toString()));
+        }
     }
 }

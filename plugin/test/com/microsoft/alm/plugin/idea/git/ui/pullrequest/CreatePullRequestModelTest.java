@@ -21,9 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,8 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GeneralGitHelper.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     CreatePullRequestModel underTest;
@@ -86,7 +83,6 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         tfsRemote = new GitRemote("origin", Collections.singletonList("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
                 Collections.singletonList("https://pushurl"), Collections.emptyList(), Collections.emptyList());
 
-        when(diffProviderMock.getEmptyDiff(gitRepositoryMock)).thenCallRealMethod();
         when(gitRepositoryMock.getRemotes()).thenReturn(Collections.singletonList(tfsRemote));
 
         mockGitRepoBranches(currentBranch);
@@ -179,34 +175,38 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
         mockGitRepoBranches(currentBranch, master);
 
-        PowerMockito.mockStatic(GeneralGitHelper.class);
-        when(GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, currentBranch)).thenReturn(currentBranchCommitHash);
-        when(GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, master)).thenReturn(remoteBranchCommitHash);
+        try (var generalGitHelperStatic = Mockito.mockStatic(GeneralGitHelper.class)) {
+            generalGitHelperStatic.when(
+                    () -> GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, currentBranch))
+                    .thenReturn(currentBranchCommitHash);
+            generalGitHelperStatic.when(
+                    () -> GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, master))
+                    .thenReturn(remoteBranchCommitHash);
 
-        underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
-        underTest.setDiffCompareInfoProvider(diffProviderMock);
-        underTest.setApplicationProvider(applicationProviderMock);
+            underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
+            underTest.setDiffCompareInfoProvider(diffProviderMock);
+            underTest.setApplicationProvider(applicationProviderMock);
 
-        GitCommitCompareInfo compareInfo = new GitCommitCompareInfo();
-        when(diffProviderMock.getBranchCompareInfo(projectMock, gitRepositoryMock,
-                currentBranchCommitHash, remoteBranchCommitHash))
-                .thenReturn(compareInfo);
+            GitCommitCompareInfo compareInfo = new GitCommitCompareInfo();
+            when(diffProviderMock.getBranchCompareInfo(projectMock, gitRepositoryMock,
+                    currentBranchCommitHash, remoteBranchCommitHash))
+                    .thenReturn(compareInfo);
 
-        GitChangesContainer branchChangesContainer = underTest.getMyChangesCompareInfo();
-        assertEquals(compareInfo, branchChangesContainer.getGitCommitCompareInfo());
+            GitChangesContainer branchChangesContainer = underTest.getMyChangesCompareInfo();
+            assertEquals(compareInfo, branchChangesContainer.getGitCommitCompareInfo());
 
-        // verify diff loader is called once
-        verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                currentBranchCommitHash, remoteBranchCommitHash);
+            // verify diff loader is called once
+            verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
+                    currentBranchCommitHash, remoteBranchCommitHash);
 
-        underTest.getMyChangesCompareInfo();
-        underTest.getMyChangesCompareInfo();
-        underTest.getMyChangesCompareInfo();
+            underTest.getMyChangesCompareInfo();
+            underTest.getMyChangesCompareInfo();
+            underTest.getMyChangesCompareInfo();
 
-        // diff loader should still only being called once since we hit cache
-        verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                currentBranchCommitHash, remoteBranchCommitHash);
-
+            // diff loader should still only being called once since we hit cache
+            verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
+                    currentBranchCommitHash, remoteBranchCommitHash);
+        }
     }
 
     @Test

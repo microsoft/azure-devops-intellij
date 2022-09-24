@@ -9,17 +9,13 @@ import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(VersionControlPath.class)
+@RunWith(MockitoJUnitRunner.class)
 public class StatusProviderTest {
 
     @Mock
@@ -28,10 +24,8 @@ public class StatusProviderTest {
     @Mock
     private FilePath myFilePath;
 
-    public StatusProviderTest() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(VersionControlPath.class);
-    }
+    @Mock
+    private MockedStatic<VersionControlPath> myVersionControlPath;
 
     @Test
     public void itemExistenceShouldBeProperlyCalculated() throws TfsException {
@@ -48,7 +42,8 @@ public class StatusProviderTest {
                 true,
                 "sourceItem");
 
-        when(VersionControlPath.getFilePath(any(String.class), any(Boolean.class))).thenReturn(myFilePath);
+        myVersionControlPath.when(() -> VersionControlPath.getFilePath(any(String.class), any(Boolean.class)))
+                .thenReturn(myFilePath);
         StatusProvider.visitByStatus(myStatusVisitor, candidateChange);
 
         verify(myStatusVisitor).unversioned(myFilePath, false, ServerStatus.Unversioned.INSTANCE);

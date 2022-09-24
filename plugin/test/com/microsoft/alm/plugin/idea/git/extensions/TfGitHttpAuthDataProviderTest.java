@@ -9,17 +9,17 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import git4idea.repo.GitRemote;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -31,8 +31,7 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GitRemote.class, TeamServicesSecrets.class, TfGitHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
     private final String SERVER_URL = "https://dev.azure.com/username";
     private final AuthenticationInfo authenticationInfo = new AuthenticationInfo(
@@ -42,13 +41,13 @@ public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
             "userNameForDisplay");
     private final Project project = Mockito.mock(Project.class);
 
-
     private TfGitHttpAuthDataProvider authDataProvider;
+
+    @Mock
+    MockedStatic<TfGitHelper> tfGitHelper;
 
     @Before
     public void setUpTest() {
-        PowerMockito.mockStatic(TeamServicesSecrets.class, TfGitHelper.class);
-
         authDataProvider = new TfGitHttpAuthDataProvider();
         ServerContext context = Mockito.mock(ServerContext.class);
         when(context.getUri()).thenReturn(URI.create(SERVER_URL));
@@ -87,9 +86,10 @@ public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
     public void testAuthDataWithOneRemote() {
         GitRemote gitRemote = PowerMockito.mock(GitRemote.class);
         when(gitRemote.getFirstUrl()).thenReturn("https://dev.azure.com/username/myproject/_git/myproject");
-        when(TfGitHelper.getTfGitRemotes(any(Project.class))).thenReturn(Collections.singleton(gitRemote));
+        tfGitHelper.when(() -> TfGitHelper.getTfGitRemotes(any(Project.class)))
+                .thenReturn(Collections.singleton(gitRemote));
 
-        AuthData result = authDataProvider.getAuthData(project, "https://dev.azure.com");
+        var result = authDataProvider.getAuthData(project, "https://dev.azure.com");
 
         assertAuthenticationInfoEquals(authenticationInfo, result);
     }
