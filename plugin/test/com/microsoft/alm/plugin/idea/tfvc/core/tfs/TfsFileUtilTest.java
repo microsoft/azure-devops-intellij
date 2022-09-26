@@ -4,8 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusFactory;
-import com.intellij.openapi.vcs.FileStatusFactoryImpl;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
@@ -35,8 +33,6 @@ public class TfsFileUtilTest extends MockedIdeaApplicationTest {
 
     @Before
     public void setUp() {
-        when(mockApplication.getService(FileStatusFactory.class)).thenReturn(new FileStatusFactoryImpl());
-
         when(virtualDirectory.isDirectory()).thenReturn(true);
         when(virtualFileAdded.isDirectory()).thenReturn(false);
         when(virtualFileUnknown.isDirectory()).thenReturn(false);

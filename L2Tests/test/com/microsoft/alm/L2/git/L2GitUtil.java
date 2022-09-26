@@ -64,8 +64,6 @@ public class L2GitUtil {
         // adds and commits the change
         final LocalChangeListImpl localChangeList = LocalChangeListImpl.createEmptyChangeListImpl(project, "TestCommit", "12345");
         final ChangeListManagerImpl changeListManager = ChangeListManagerImpl.getInstanceImpl(project);
-//        VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
-//        changeListManager.ensureUpToDate();
         changeListManager.addUnversionedFiles(localChangeList, ImmutableList.of(readmeVirtualFile));
         changeListManager.waitUntilRefreshed();
         final Change change = changeListManager.getChange(LocalFileSystem.getInstance().findFileByIoFile(file));
@@ -109,15 +107,6 @@ public class L2GitUtil {
                         baseDirectory.getPath());
             }
         }, new ProgressIndicatorBase());
-
-//        virtualBaseDirectory.refresh(false, true, new Runnable() {
-//            public void run() {
-//                if (project.isOpen() && !project.isDisposed() && !project.isDefault()) {
-//                    final VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
-//                    mgr.fileDirty(virtualBaseDirectory);
-//                }
-//            }
-//        });
 
         Project clonedProject = customListener.getNewProject();
         ProjectLevelVcsManager manager = ProjectLevelVcsManager.getInstance(clonedProject);
