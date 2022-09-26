@@ -5,8 +5,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatusFactory;
-import com.intellij.openapi.vcs.FileStatusFactoryImpl;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
@@ -34,7 +32,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TFSChangeListTest extends MockedIdeaApplicationTest {
@@ -73,9 +70,6 @@ public class TFSChangeListTest extends MockedIdeaApplicationTest {
 
     @Before
     public void setUp() {
-        // Required for FileStatus access.
-        when(mockApplication.getService(FileStatusFactory.class)).thenReturn(new FileStatusFactoryImpl());
-
         vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath1.getPath(), addedFilePath1.isDirectory())).thenReturn(addedFilePath1);
         vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath2.getPath(), addedFilePath2.isDirectory())).thenReturn(addedFilePath2);
         vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath3.getPath(), addedFilePath3.isDirectory())).thenReturn(addedFilePath3);
