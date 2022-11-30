@@ -52,7 +52,7 @@
       <br />
       <b>End User License Agreement & Privacy Policy</b>
       <br />
-      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Privacy Statement</a>
+      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="https://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Privacy Statement</a>
       <br /><i>Note</i>: When using the TFVC support, this plugin will pass your Team Foundation credentials securely to the TF command line tool. That tool is installed separately and it is up to the user to verify that it is in a secure location on disk and has not been tampered with.
     ]]></description>
 
@@ -70,7 +70,7 @@
     ]]>
     </change-notes>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     <idea-version since-build="182"/>
 
     <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
