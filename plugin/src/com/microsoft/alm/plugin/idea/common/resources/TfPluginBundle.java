@@ -127,6 +127,12 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_REPOSITORY_IMPORT_SUCCESS = "Tfvc.RepositoryImportSuccess";
     @NonNls
     public static final String KEY_TFVC_WORKSPACE_NOT_DETECTED = "Tfvc.WorkspaceNotDetected";
+    @NonNls
+    public static final String KEY_TFVC_EULA_ACCEPTANCE_IS_REQUIRED = "Tfvc.EulaAcceptanceIsRequired";
+    @NonNls
+    public static final String KEY_TFVC_EULA_SHOW_SDK = "Tfvc.Eula.Show.Sdk";
+    @NonNls
+    public static final String KEY_TFVC_EULA_SHOW_COMMAND_LINE = "Tfvc.Eula.Show.CommandLine";
 
     // TFVC Checkout
     @NonNls

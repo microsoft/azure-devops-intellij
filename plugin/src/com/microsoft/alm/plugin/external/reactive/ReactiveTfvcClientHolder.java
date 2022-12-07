@@ -11,6 +11,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
+import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
@@ -73,14 +74,18 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     private void ensureEulaAccepted(@Nullable Project project) {
-        ApplicationManager.getApplication().invokeAndWait(() -> {
-            PropertyService propertyService = PropertyService.getInstance();
-            String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
-            if (!"true".equalsIgnoreCase(eulaAccepted)) {
-                if (!EULADialog.forTfsSdk(project).showAndGet())
-                    throw new RuntimeException("EULA acceptance is required to use the reactive TF client");
+        PropertyService propertyService = PropertyService.getInstance();
+        String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
+        if (!"true".equalsIgnoreCase(eulaAccepted)) {
+            if (!EULADialog.isEulaDialogAllowed()) {
+                throw new ToolEulaNotAcceptedException("EULA acceptance is required to use the reactive TF client");
             }
-        }, ModalityState.any()); // EULA should be shown even if there's a modal dialog (e.g. a commit one)
+
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                if (!EULADialog.forTfsSdk(project).showAndGet())
+                    throw new ToolEulaNotAcceptedException("EULA acceptance is required to use the reactive TF client");
+            }, ModalityState.any()); // EULA should be shown even if there's a modal dialog (e.g. a commit one)
+        }
     }
 
     private void destroyClientIfExists() {

@@ -3,6 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.SystemInfo;
@@ -14,7 +18,9 @@ import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import com.microsoft.alm.plugin.services.PropertyService;
 import kotlin.text.Charsets;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +42,7 @@ import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
 public class EULADialog extends DialogWrapper {
+    private static boolean isDialogOnScreen = false;
     private final static org.slf4j.Logger logger = LoggerFactory.getLogger(EULADialog.class);
     private static boolean myWasShow = false;
     private final JBScrollPane myScrollPane;
@@ -162,8 +169,21 @@ public class EULADialog extends DialogWrapper {
     @Override
     public void show() {
         if (myEulaTextFound) {
+            if (isDialogOnScreen) {
+                logger.warn("A EULA dialog is on screen; ignoring attempt to open a second one");
+                return;
+            }
+
+            isDialogOnScreen = true;
             super.show();
         }
+    }
+
+    @Override
+    protected void dispose() {
+        ApplicationManager.getApplication().assertIsDispatchThread();
+        isDialogOnScreen = false;
+        super.dispose();
     }
 
     @TestOnly
@@ -207,7 +227,11 @@ public class EULADialog extends DialogWrapper {
     @Nullable
     public static synchronized Boolean showDialogIfNeeded(@Nullable final Project project) {
         if (!myWasShow) {
-            boolean result = forCommandLineClient(project).showAndGet();
+            var propertyService = PropertyService.getInstance();
+            var dialog = propertyService.useReactiveClient()
+                    ? forTfsSdk(project)
+                    : forCommandLineClient(project);
+            boolean result = dialog.showAndGet();
             myWasShow = true;
             return result;
         }
@@ -221,21 +245,26 @@ public class EULADialog extends DialogWrapper {
      * @param activity activity to execute on the current thread. May be executed twice if it throws a
      *                 {@link ToolEulaNotAcceptedException}.
      * @throws ToolEulaNotAcceptedException will be thrown if the user was presented by the EULA dialog and didn't
-     *                                      accepted it.
+     *                                      accept it.
+     * @return either the activity result or null if it was impossible to show the EULA dialog, and it wasn't accepted.
      */
-    public static <T> T executeWithGuard(@Nullable Project project, @NotNull Supplier<T> activity) {
+    public static <T> @Nullable T executeWithGuard(@Nullable Project project, @NotNull Supplier<T> activity) {
         T result;
         try {
             result = activity.get();
         } catch (ToolEulaNotAcceptedException ex) {
-            logger.warn("EULA not accepted; showing EULA dialog");
+            logger.warn("EULA not accepted");
+            if (!isEulaDialogAllowed()) {
+                notifyAboutEula(project);
+                return null;
+            }
 
             AtomicBoolean isAccepted = new AtomicBoolean();
 
             IdeaHelper.runOnUIThread(() -> {
                 Boolean wasAccepted = EULADialog.showDialogIfNeeded(project);
+                logger.info("EULADialog.showDialogIfNeeded result: {}", wasAccepted);
                 if (wasAccepted != null) {
-                    logger.info("EULADialog.showDialogIfNeeded result: {}", wasAccepted);
                     isAccepted.set(wasAccepted);
                 }
             }, true);
@@ -250,5 +279,55 @@ public class EULADialog extends DialogWrapper {
         }
 
         return result;
+    }
+
+    public static boolean isEulaDialogAllowed() {
+        var application = ApplicationManager.getApplication();
+        if (application == null) {
+            logger.info("application == null; assume EULA dialog is allowed.");
+            return true;
+        }
+
+        if (application.isReadAccessAllowed()) {
+            logger.warn("Read lock is currently held; EULA dialog is not allowed");
+            return false;
+        }
+
+        if (application.isWriteAccessAllowed()) {
+            logger.warn("Write lock is currently held; EULA dialog is not allowed");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void notifyAboutEula(@Nullable Project project) {
+        var service = PropertyService.getInstance();
+        var notification = service.useReactiveClient()
+                ? TFVCNotifications.createSdkEulaNotification()
+                : TFVCNotifications.createCommandLineClientEulaNotification();
+        notification.notify(project);
+    }
+
+    public static class ShowTfvcSdkEulaAction extends AnAction implements DumbAware {
+        public ShowTfvcSdkEulaAction() {
+            super(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_EULA_SHOW_SDK));
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            forTfsSdk(e.getProject()).show();
+        }
+    }
+
+    public static class ShowTfvcCommandLineClientEulaAction extends AnAction implements DumbAware {
+        public ShowTfvcCommandLineClientEulaAction() {
+            super(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_EULA_SHOW_COMMAND_LINE));
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            forCommandLineClient(e.getProject()).show();
+        }
     }
 }

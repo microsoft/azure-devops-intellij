@@ -143,6 +143,11 @@ project(":plugin") {
     }
 
     task zip(dependsOn: ['buildPlugin','test']) {}
+
+    // Uncomment for IDE internal mode:
+    //runIde {
+    //    jvmArgs("-Didea.is.intenal=true")
+    //}
 }
 
 project(':plugin:test-utils') {
