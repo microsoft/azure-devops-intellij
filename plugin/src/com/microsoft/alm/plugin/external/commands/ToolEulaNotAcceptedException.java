@@ -7,4 +7,8 @@ public class ToolEulaNotAcceptedException extends RuntimeException {
     public ToolEulaNotAcceptedException(Throwable throwable) {
         super("EULA not accepted", throwable);
     }
+
+    public ToolEulaNotAcceptedException(String message) {
+        super(message);
+    }
 }

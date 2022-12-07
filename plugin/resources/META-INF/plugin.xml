@@ -59,12 +59,7 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Minimal supported IntelliJ platform version is now 2021.2.4.</li>
-        <li>Fixed an issue <a href="https://github.com/microsoft/azure-devops-intellij/issues/473">#473</a>: it was impossible to show the conflict resolve dialog for TFVC.</li>
-        <li>Fixed an issue <a href="https://github.com/microsoft/azure-devops-intellij/issues/491">#491</a>: it was impossible to create a Git pull request in IDEs based on IntelliJ 2022.2</li>
-        <li>Fixed an issue with TFVC operations (<a href="https://github.com/microsoft/azure-devops-intellij/issues/498">#498</a>).</li>
-        <li>TFS SDK is upgraded to <a href="https://github.com/JetBrains/team-explorer-everywhere/releases/tag/14.135.3">14.135.3</a> for better compatibility with M1 Mac hardware.</li>
-        <li>Handle SSH URLs on azure.com in TFVC.</li>
+        <li>Fix issues caused by a TF license agreement not being accepted when using the plugin. Add actions to accept the agreement manually, if auto-detection fails.</li>
       </ul>
       <br />
     ]]>
@@ -213,5 +208,12 @@
                 class="com.microsoft.alm.plugin.idea.tfvc.ui.servertree.CreateVirtualFolderAction" icon="AllIcons.Actions.NewFolder">
             <add-to-group group-id="TfvcTreePopupMenu" anchor="first"/>
         </action>
+
+        <action class="com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog$ShowTfvcCommandLineClientEulaAction"/>
+        <action class="com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog$ShowTfvcSdkEulaAction"/>
+
+        <!-- Internal actions -->
+        <action internal="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications$ShowSdkEulaNotification"/>
+        <action internal="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications$ShowCommandLineClientEulaNotification"/>
     </actions>
 </idea-plugin>

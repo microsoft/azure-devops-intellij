@@ -26,6 +26,7 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
@@ -101,7 +102,11 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         }
 
         TfvcClient tfvcClient = TfvcClient.getInstance();
-        ServerContext serverContext = vcs.getServerContext(true);
+        ServerContext serverContext = EULADialog.executeWithGuard(myProject, () -> vcs.getServerContext(true));
+        if (serverContext == null){
+            ourLogger.warn("EULA not accepted");
+            return false;
+        }
 
         List<PendingChange> pendingChanges = tfvcClient.getStatusForFiles(
                 currentProject,
