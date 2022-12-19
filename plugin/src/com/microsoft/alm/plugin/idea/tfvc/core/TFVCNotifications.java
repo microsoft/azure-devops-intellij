@@ -20,6 +20,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.actions.AddFileToTfIgnoreAction;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TFVCNotifications {
     private static final NotificationGroup TFS_NOTIFICATIONS = new NotificationGroup(
@@ -51,6 +52,19 @@ public class TFVCNotifications {
             }
         });
         UIUtil.invokeLaterIfNeeded(ourQueue::activate);
+    }
+
+    public static void notify(
+            @NotNull Notification notification,
+            @Nullable Project project,
+            @NotNull Object deduplicationKey) {
+        ourQueue.queue(new Update(deduplicationKey) {
+            @Override
+            public void run() {
+                notification.notify(project);
+            }
+        });
+        ourQueue.activate();
     }
 
     public static Notification createSdkEulaNotification() {

@@ -306,7 +306,7 @@ public class EULADialog extends DialogWrapper {
         var notification = service.useReactiveClient()
                 ? TFVCNotifications.createSdkEulaNotification()
                 : TFVCNotifications.createCommandLineClientEulaNotification();
-        notification.notify(project);
+        TFVCNotifications.notify(notification, project, service.useReactiveClient() ? "SdkLicense" : "ClassicLicense");
     }
 
     public static class ShowTfvcSdkEulaAction extends AnAction implements DumbAware {
