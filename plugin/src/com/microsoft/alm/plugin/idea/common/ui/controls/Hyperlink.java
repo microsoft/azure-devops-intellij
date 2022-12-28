@@ -3,15 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.controls;
 
-import com.intellij.ui.JBColor;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.ui.components.labels.LinkListener;
-import com.microsoft.alm.plugin.idea.common.utils.BackCompatibleUtils;
 
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,27 +53,6 @@ public class Hyperlink extends LinkLabel<Object> {
         if (e.getKeyCode() == KeyEvent.VK_SPACE || e.getKeyCode() == KeyEvent.VK_ENTER) {
             e.consume();
             notifyActionListeners();
-        }
-    }
-
-    /**
-     * We are overriding this method to force a repaint of the control when the focus changes.
-     */
-    @Override
-    protected void processFocusEvent(final FocusEvent e) {
-        super.processFocusEvent(e);
-        super.repaint();
-    }
-
-    /**
-     * We are overriding this method to paint a focus rectangle around the control.
-     */
-    @Override
-    protected void paintComponent(final Graphics g) {
-        super.paintComponent(g);
-        if (hasFocus()) {
-            g.setColor(JBColor.black);
-            BackCompatibleUtils.paintFocusRing(g, 0, 0, getWidth(), getHeight());
         }
     }
 
