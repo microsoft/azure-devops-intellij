@@ -11,6 +11,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.ui.UIUtil;
@@ -29,7 +30,7 @@ public class TFVCNotifications {
             true
     );
 
-    private static MergingUpdateQueue ourQueue = new MergingUpdateQueue(
+    private static final MergingUpdateQueue ourQueue = new MergingUpdateQueue(
             "TFVCNotifications.myQueue",
             2000,
             false,
@@ -64,7 +65,7 @@ public class TFVCNotifications {
                 notification.notify(project);
             }
         });
-        ourQueue.activate();
+        ApplicationManager.getApplication().invokeLater(ourQueue::activate, ModalityState.NON_MODAL);
     }
 
     public static Notification createSdkEulaNotification() {
