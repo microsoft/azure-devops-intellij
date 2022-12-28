@@ -59,7 +59,7 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Fix issues caused by a TF license agreement not being accepted when using the plugin. Add actions to accept the agreement manually, if auto-detection fails.</li>
+        <li>Fix issues caused by a TF license agreement not being accepted when using the plugin. Add actions to accept the agreement manually, for cases when auto-detection fails.</li>
       </ul>
       <br />
     ]]>
