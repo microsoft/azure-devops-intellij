@@ -225,10 +225,11 @@ public class EULADialog extends DialogWrapper {
      * dialog was shown and the user clicked "Decline".
      */
     @Nullable
-    public static synchronized Boolean showDialogIfNeeded(@Nullable final Project project) {
+    public static synchronized Boolean showDialogIfNeeded(
+            @NotNull LicenseKind licenseKind,
+            @Nullable final Project project) {
         if (!myWasShow) {
-            var propertyService = PropertyService.getInstance();
-            var dialog = propertyService.useReactiveClient()
+            var dialog = licenseKind == LicenseKind.TfsSdk
                     ? forTfsSdk(project)
                     : forCommandLineClient(project);
             boolean result = dialog.showAndGet();
@@ -253,16 +254,17 @@ public class EULADialog extends DialogWrapper {
         try {
             result = activity.get();
         } catch (ToolEulaNotAcceptedException ex) {
-            logger.warn("EULA not accepted");
+            var licenseKind = ex.getLicenseKind();
+            logger.warn("EULA not accepted for " + licenseKind);
             if (!isEulaDialogAllowed()) {
-                notifyAboutEula(project);
+                notifyAboutEula(licenseKind, project);
                 return null;
             }
 
             AtomicBoolean isAccepted = new AtomicBoolean();
 
             IdeaHelper.runOnUIThread(() -> {
-                Boolean wasAccepted = EULADialog.showDialogIfNeeded(project);
+                Boolean wasAccepted = EULADialog.showDialogIfNeeded(licenseKind, project);
                 logger.info("EULADialog.showDialogIfNeeded result: {}", wasAccepted);
                 if (wasAccepted != null) {
                     isAccepted.set(wasAccepted);
@@ -301,12 +303,12 @@ public class EULADialog extends DialogWrapper {
         return true;
     }
 
-    private static void notifyAboutEula(@Nullable Project project) {
-        var service = PropertyService.getInstance();
-        var notification = service.useReactiveClient()
+    private static void notifyAboutEula(@NotNull LicenseKind licenseKind, @Nullable Project project) {
+        var forSdk = licenseKind == LicenseKind.TfsSdk;
+        var notification = forSdk
                 ? TFVCNotifications.createSdkEulaNotification()
                 : TFVCNotifications.createCommandLineClientEulaNotification();
-        TFVCNotifications.notify(notification, project, service.useReactiveClient() ? "SdkLicense" : "ClassicLicense");
+        TFVCNotifications.notify(notification, project, forSdk ? "SdkLicense" : "ClassicLicense");
     }
 
     public static class ShowTfvcSdkEulaAction extends AnAction implements DumbAware {

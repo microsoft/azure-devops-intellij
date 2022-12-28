@@ -3,12 +3,27 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.LicenseKind;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public class ToolEulaNotAcceptedException extends RuntimeException {
-    public ToolEulaNotAcceptedException(Throwable throwable) {
-        super("EULA not accepted", throwable);
+
+    private final @NotNull LicenseKind myLicenseKind;
+    public @NotNull LicenseKind getLicenseKind() {
+        return myLicenseKind;
     }
 
-    public ToolEulaNotAcceptedException(String message) {
-        super(message);
+    public ToolEulaNotAcceptedException(@NotNull LicenseKind licenseKind, @NotNull Throwable throwable) {
+        this(licenseKind, null, throwable);
+    }
+
+    public ToolEulaNotAcceptedException(@NotNull LicenseKind licenseKind, @NotNull String message) {
+        this(licenseKind, message, null);
+    }
+
+    private ToolEulaNotAcceptedException(@NotNull LicenseKind kind, @Nullable String message, @Nullable Throwable cause) {
+        super(message == null ? "EULA not accepted" : message, cause);
+        myLicenseKind = kind;
     }
 }

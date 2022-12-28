@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.LicenseKind;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,12 +79,16 @@ public class ReactiveTfvcClientHolder implements Disposable {
         String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
         if (!"true".equalsIgnoreCase(eulaAccepted)) {
             if (!EULADialog.isEulaDialogAllowed()) {
-                throw new ToolEulaNotAcceptedException("EULA acceptance is required to use the reactive TF client");
+                throw new ToolEulaNotAcceptedException(
+                        LicenseKind.TfsSdk,
+                        "EULA acceptance is required to use the reactive TF client");
             }
 
             ApplicationManager.getApplication().invokeAndWait(() -> {
                 if (!EULADialog.forTfsSdk(project).showAndGet())
-                    throw new ToolEulaNotAcceptedException("EULA acceptance is required to use the reactive TF client");
+                    throw new ToolEulaNotAcceptedException(
+                            LicenseKind.TfsSdk,
+                            "EULA acceptance is required to use the reactive TF client");
             }, ModalityState.any()); // EULA should be shown even if there's a modal dialog (e.g. a commit one)
         }
     }

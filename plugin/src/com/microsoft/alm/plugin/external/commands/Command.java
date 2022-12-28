@@ -17,6 +17,7 @@ import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.LicenseKind;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
@@ -241,7 +242,7 @@ public abstract class Command<T> {
             Throwable error = syncError.get();
             if (error != null) {
                 if (error.getMessage().contains("tf eula")) {
-                    throw new ToolEulaNotAcceptedException(error);
+                    throw new ToolEulaNotAcceptedException(LicenseKind.CommandLineClient, error);
                 }
                 if (error instanceof RuntimeException) {
                     logger.warn("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
