@@ -3,14 +3,10 @@
  */
 buildscript {
     ext {
-        // https://www.myget.org/feed/rd-snapshots/package/maven/com.jetbrains.rd/rd-gen
-        rdGenVersion = '0.212.319'
+        // https://search.maven.org/artifact/com.jetbrains.rd/rd-gen
+        rdGenVersion = '2021.3.0'
     }
-    repositories {
-        maven {
-            url "https://cache-redirector.jetbrains.com/www.myget.org/F/rd-snapshots/maven"
-        }
-    }
+
     dependencies { classpath "com.jetbrains.rd:rd-gen:$rdGenVersion" }
 }
 
