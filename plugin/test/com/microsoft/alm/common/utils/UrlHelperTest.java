@@ -21,6 +21,19 @@ public class UrlHelperTest {
             return result.getProjectName().equals("project");
         }
     };
+    
+    @Test
+    public void testUriFromGitRemote() {
+        assertEquals(
+                URI.create("ssh://git@ssh.dev.azure.com:v3/username/Project"),
+                UrlHelper.uriFromGitRemote("git@ssh.dev.azure.com:v3/username/Project"));
+        assertEquals(
+                URI.create("https://dev.azure.com/username/Project"),
+                UrlHelper.uriFromGitRemote("https://dev.azure.com/username/Project"));
+
+        var uri = UrlHelper.uriFromGitRemote("/tmp/file");
+        assertEquals("file", uri.getScheme());
+    }
 
     @Test
     public void testRemoveUserInfo() {

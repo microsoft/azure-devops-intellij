@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -60,6 +61,16 @@ public class UrlHelper {
 
     public static URI createUri(final String url) {
         return URI.create(getCmdLineFriendlyUrl(url));
+    }
+
+    public static @NotNull URI uriFromGitRemote(@NotNull String gitRemote) {
+        if (gitRemote.contains("://")) {
+            return URI.create(gitRemote);
+        } else if (gitRemote.contains(":") && gitRemote.indexOf(':') < gitRemote.indexOf('/')) {
+            return URI.create("ssh://" + gitRemote);
+        } else {
+            return new File(gitRemote).toURI();
+        }
     }
 
     public static boolean isValidUrl(final String serverUrl) {
@@ -214,7 +225,8 @@ public class UrlHelper {
     }
 
     public static boolean isGitRemoteUrl(final String gitRemoteUrl) {
-        return StringUtils.contains(gitRemoteUrl, "/_git/");
+        return StringUtils.contains(gitRemoteUrl, "/_git/")
+                || StringUtils.contains(gitRemoteUrl, "dev.azure.com:");
     }
 
     public static boolean isSshGitRemoteUrl(final String gitRemoteUrl) {

@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.RepositoryContextManager;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -25,7 +26,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -161,7 +161,12 @@ public class VcsHelper {
                     final String gitRemoteUrl = Objects.requireNonNull(gitRemote.getFirstUrl());
                     // TODO: Fix this HACK. There doesn't seem to be a clear way to get the full name of the current branch
                     final String branch = GIT_BRANCH_PREFIX + GitBranchUtil.getDisplayableBranchText(repository);
-                    context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, URI.create(gitRemoteUrl));
+                    var uri = UrlHelper.uriFromGitRemote(gitRemoteUrl);
+                    context = RepositoryContext.createGitContext(
+                            projectRootFolder,
+                            repository.getRoot().getName(),
+                            branch,
+                            uri);
                 }
             } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
                 final Workspace workspace = TfvcWorkspaceLocator.getPartialWorkspace(project, false);
