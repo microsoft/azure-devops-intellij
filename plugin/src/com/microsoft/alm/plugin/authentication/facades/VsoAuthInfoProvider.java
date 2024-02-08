@@ -46,6 +46,14 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     private final SecretStore<Token> tokenStore;
     private final DeviceFlowResponsePrompt deviceFlowResponsePrompt;
     private final VstsPatAuthenticator vstsPatAuthenticator;
+    private final VsoTokenScope[] scopes = new VsoTokenScope[] {
+            VsoTokenScope.BuildAccess,
+            VsoTokenScope.CodeRead,
+            VsoTokenScope.PackagingRead,
+            VsoTokenScope.WorkWrite,
+            VsoTokenScope.TestRead,
+            VsoTokenScope.ProfileRead
+    };
 
     private VsoAuthInfoProvider() {
         accessTokenStore = new InsecureInMemoryStore<TokenPair>();
@@ -137,7 +145,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
                     logger.debug("Getting a PersonalAccessToken for: {}", serverUri);
                     final Token token = vstsPatAuthenticator.getPersonalAccessToken(
                             serverUri,
-                            VsoTokenScope.AllScopes,
+                            VsoTokenScope.or(scopes),
                             tokenDescription,
                             PromptBehavior.AUTO,
                             tokenPair);
