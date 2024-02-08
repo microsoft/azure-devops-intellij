@@ -52,7 +52,8 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
             VsoTokenScope.PackagingRead,
             VsoTokenScope.WorkWrite,
             VsoTokenScope.TestRead,
-            VsoTokenScope.ProfileRead
+            VsoTokenScope.ProfileRead,
+            VsoTokenScope.ChatWrite
     };
 
     private VsoAuthInfoProvider() {
