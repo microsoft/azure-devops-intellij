@@ -48,7 +48,7 @@ public class UrlHelper {
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
     private static final String URL_BRANCH_SEGMENT = "?path=%2F&_a=contents&version=GB";
     private static final String URL_COMMIT_SEGMENT = "commit";
-    protected static final String URL_PATH_SEGMENT = "#path=";
+    protected static final String URL_PATH_SEGMENT = "?path=";
     protected static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
     protected static final String URL_TFVC_PATH_SEGMENT = "_versionControl";
     protected static final String URL_TFVC_ANNOTATE_FILE_SEGMENT = "?path=%s&_a=contents&annotate=true&hideComments=true";
