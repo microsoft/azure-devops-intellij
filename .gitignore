@@ -9,3 +9,4 @@ L2Tests/lib
 out/
 
 *.Generated.kt
+.fake
