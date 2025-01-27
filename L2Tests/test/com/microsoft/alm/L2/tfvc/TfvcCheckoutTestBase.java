@@ -17,7 +17,6 @@ import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.tfvc.ui.checkout.TfvcCheckoutModel;
 import org.junit.Assert;
-import sun.security.util.Debug;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,10 +71,10 @@ public abstract class TfvcCheckoutTestBase extends L2Test {
 
         // Create a temp folder for the clone
         File tempFolder = createTempDirectory();
-        Debug.println("tempFolder", tempFolder.toString());
+        System.out.println("tempFolder " + tempFolder);
 
         String workspaceName = getWorkspaceName();
-        Debug.println("workspaceName", workspaceName);
+        System.out.println("workspaceName " + workspaceName);
 
         // Create the model and set fields appropriately
         VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();

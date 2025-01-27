@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.sun.jna.Platform;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -15,19 +14,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Platform.class, ApplicationNamesInfo.class, AuthHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ApplicationStartupTest extends IdeaAbstractTest {
     public File VSTS_DIR = new File(System.getProperty("java.io.tmpdir"), ".vsts");
     public String TEST_IDE_LOCATION = "/test/idea/location/";
@@ -38,12 +36,14 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
     @Mock
     public ApplicationNamesInfo mockApplicationNamesInfo;
 
+    @Mock
+    private MockedStatic<ApplicationNamesInfo> applicationNamesInfo;
+
     @Before
     public void localSetup() {
         when(mockApplicationNamesInfo.getProductName()).thenReturn(IDEA_NAME);
-        PowerMockito.mockStatic(Platform.class, ApplicationNamesInfo.class, AuthHelper.class);
-        when(ApplicationNamesInfo.getInstance()).thenReturn(mockApplicationNamesInfo);
-        VSTS_DIR.mkdir();
+        applicationNamesInfo.when(ApplicationNamesInfo::getInstance).thenReturn(mockApplicationNamesInfo);
+        var ignored = VSTS_DIR.mkdir();
     }
 
     @After
@@ -100,47 +100,44 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
     @Test
     public void testConfigureAuthType_SettingsFile() {
-        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(true);
+        try (var authHelper = Mockito.mockStatic(AuthHelper.class)) {
+            authHelper.when(AuthHelper::isAuthTypeFromSettingsFileSet).thenReturn(true);
 
-        ApplicationStartup appStartup = new ApplicationStartup();
-        appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(1));
-        AuthHelper.setDeviceFlowEnvFromSettingsFile();
-        PowerMockito.verifyStatic(Mockito.times(0));
-        AuthHelper.isDeviceFlowEnvSetTrue();
+            ApplicationStartup appStartup = new ApplicationStartup();
+            appStartup.configureAuthType();
+
+            authHelper.verify(AuthHelper::setDeviceFlowEnvFromSettingsFile, times(1));
+            authHelper.verify(AuthHelper::isDeviceFlowEnvSetTrue, times(0));
+        }
     }
 
     @Test
     public void testConfigureAuthType_EnvVariable() {
-        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(false);
-        when(AuthHelper.isDeviceFlowEnvSetTrue()).thenReturn(true);
+        try (var authHelper = Mockito.mockStatic(AuthHelper.class)) {
+            authHelper.when(AuthHelper::isAuthTypeFromSettingsFileSet).thenReturn(false);
+            authHelper.when(AuthHelper::isDeviceFlowEnvSetTrue).thenReturn(true);
 
-        ApplicationStartup appStartup = new ApplicationStartup();
-        appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(0));
-        AuthHelper.setDeviceFlowEnvFromSettingsFile();
-        PowerMockito.verifyStatic(Mockito.times(1));
-        AuthHelper.isDeviceFlowEnvSetTrue();
-        AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
+            ApplicationStartup appStartup = new ApplicationStartup();
+            appStartup.configureAuthType();
+
+            authHelper.verify(AuthHelper::setDeviceFlowEnvFromSettingsFile, times(0));
+            authHelper.verify(AuthHelper::isDeviceFlowEnvSetTrue, times(1));
+            authHelper.verify(() -> AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW), times(1));
+        }
     }
 
     @Test
     public void testConfigureAuthType_None() {
-        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(false);
-        when(AuthHelper.isDeviceFlowEnvSetTrue()).thenReturn(false);
+        try (var authHelper = Mockito.mockStatic(AuthHelper.class)) {
+            authHelper.when(AuthHelper::isAuthTypeFromSettingsFileSet).thenReturn(false);
+            authHelper.when(AuthHelper::isDeviceFlowEnvSetTrue).thenReturn(false);
 
-        ApplicationStartup appStartup = new ApplicationStartup();
-        appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(0));
-        AuthHelper.setDeviceFlowEnvFromSettingsFile();
-        AuthHelper.isDeviceFlowEnvSetTrue();
-        AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
-    }
+            ApplicationStartup appStartup = new ApplicationStartup();
+            appStartup.configureAuthType();
 
-    public void setOsResponses(boolean windowsResponse, boolean macResponse, boolean linuxResponse) {
-        when(Platform.isWindows()).thenReturn(windowsResponse);
-        when(Platform.isMac()).thenReturn(macResponse);
-        when(Platform.isLinux()).thenReturn(linuxResponse);
+            authHelper.verify(AuthHelper::setDeviceFlowEnvFromSettingsFile, times(0));
+            authHelper.verify(() -> AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW), times(0));
+        }
     }
 
     public void writeToFile(File file, String content) throws Exception {

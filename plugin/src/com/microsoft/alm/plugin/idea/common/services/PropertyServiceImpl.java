@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.services.PropertyService;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class PropertyServiceImpl implements PropertyService {
@@ -31,13 +30,13 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public String getProperty(final String propertyName) {
+    public synchronized String getProperty(final String propertyName) {
         ensureRestored();
         return map.get(propertyName);
     }
 
     @Override
-    public void setProperty(final String propertyName, final String value) {
+    public synchronized void setProperty(final String propertyName, final String value) {
         ensureRestored();
         if (value == null) {
             removeProperty(propertyName);
@@ -55,16 +54,16 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public void removeProperty(final String propertyName) {
+    public synchronized void removeProperty(final String propertyName) {
         map.remove(propertyName);
     }
 
-    public Map<String, String> getProperties() {
+    public synchronized Map<String, String> getProperties() {
         if (map == null) {
             return null;
         }
 
-        return Collections.unmodifiableMap(map);
+        return Map.copyOf(map);
     }
 
     private void ensureRestored() {

@@ -11,7 +11,7 @@ import com.jetbrains.rd.util.reactive.IScheduler
 import com.jetbrains.rd.util.reactive.adviseOnce
 import com.jetbrains.rd.util.reactive.whenTrue
 import com.microsoft.tfs.model.connector.*
-import kotlinx.coroutines.CancellationException
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 

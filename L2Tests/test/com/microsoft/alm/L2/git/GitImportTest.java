@@ -14,7 +14,6 @@ import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.security.util.Debug;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,7 +40,7 @@ public class GitImportTest extends L2Test {
 
     @Test(timeout = 60000)
     public void testImport_VSO() throws Exception {
-        Debug.println("Start", null);
+        System.out.println("Start");
         final ImportModel importModel = new ImportModel(myProject, null, null, false);
         final String repoName = generateUniqueName("testRepo");
 
@@ -49,10 +48,10 @@ public class GitImportTest extends L2Test {
 
         // Add a file to the folder
         final String uniqueString = UUID.randomUUID().toString();
-        Debug.println("uniqueString", uniqueString);
+        System.out.println("uniqueString " + uniqueString);
         final File readme = new File(projectPath, README_FILE);
         FileUtil.writeToFile(readme, uniqueString);
-        Debug.println("readme path", readme.getAbsolutePath());
+        System.out.println("readme path " + readme.getAbsolutePath());
 
         // Mock the select files dialog that the model calls into
         mockSelectFilesDialog(Collections.singletonList(readme));

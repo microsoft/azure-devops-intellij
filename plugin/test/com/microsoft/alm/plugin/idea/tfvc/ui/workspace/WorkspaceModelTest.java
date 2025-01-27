@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -22,10 +21,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.ws.rs.NotAuthorizedException;
 import java.net.URI;
@@ -34,20 +32,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-        CommandUtils.class,
-        OperationExecutor.class,
-        ServerContextManager.class,
-        VcsHelper.class
-})
+@RunWith(MockitoJUnitRunner.class)
 public class WorkspaceModelTest extends IdeaAbstractTest {
     final String name = "name1";
     final String server = "http://server1";
@@ -63,39 +55,44 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     RepositoryContext repositoryContext;
     RepositoryContext repositoryContext_noProject;
 
+    @Mock
+    private MockedStatic<OperationExecutor> operationExecutorStatic;
+
+    @Mock
+    private MockedStatic<ServerContextManager> serverContextManagerStatic;
+
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelperStatic;
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Before
     public void mockObjects() {
         mockProject = mock(Project.class);
         executor = mock(OperationExecutor.class);
-        PowerMockito.mockStatic(OperationExecutor.class);
-        when(OperationExecutor.getInstance()).thenReturn(executor);
+        operationExecutorStatic.when(OperationExecutor::getInstance).thenReturn(executor);
 
         authenticatedContext = mock(ServerContext.class);
-        when(authenticatedContext.getTeamProjectReference()).thenReturn(new TeamProjectReference());
 
         serverContextManager = mock(ServerContextManager.class);
-        when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
         when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), anyString(), anyBoolean()))
                 .thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), Matchers.eq(""), anyBoolean()))
-                .thenReturn(null);
 
-        PowerMockito.mockStatic(ServerContextManager.class);
-        when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
+        serverContextManagerStatic.when(ServerContextManager::getInstance).thenReturn(serverContextManager);
 
         final Workspace workspace = new Workspace(server, name, computer, owner, comment, mappings, Workspace.Location.SERVER);
-        PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getWorkspace(any(ServerContext.class), anyString())).thenReturn(workspace);
-        when(CommandUtils.getWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
-        when(CommandUtils.getDetailedWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
-        when(CommandUtils.updateWorkspace(any(ServerContext.class), any(Workspace.class), any(Workspace.class))).thenReturn("");
-        when(CommandUtils.syncWorkspace(any(ServerContext.class), anyString())).thenReturn(null);
+        commandUtilsStatic.when(() -> CommandUtils.getWorkspace(any(ServerContext.class), anyString())).thenReturn(workspace);
+        commandUtilsStatic.when(() -> CommandUtils.getWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
+        commandUtilsStatic.when(() -> CommandUtils.getDetailedWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
+        commandUtilsStatic.when(() -> CommandUtils.updateWorkspace(any(ServerContext.class), any(Workspace.class), any(Workspace.class))).thenReturn("");
+        commandUtilsStatic.when(() -> CommandUtils.syncWorkspace(any(ServerContext.class), anyString())).thenReturn(null);
 
         repositoryContext = RepositoryContext.createTfvcContext("/path", name, "project1", workspace.getServerUri());
         repositoryContext_noProject = RepositoryContext.createTfvcContext("/path", name, "", workspace.getServerUri());
-        PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(mockProject)).thenReturn(repositoryContext);
-        when(VcsHelper.getRepositoryContext(mockProject2)).thenReturn(repositoryContext_noProject);
+        vcsHelperStatic.when(() -> VcsHelper.getRepositoryContext(mockProject)).thenReturn(repositoryContext);
+        vcsHelperStatic.when(() -> VcsHelper.getRepositoryContext(mockProject2)).thenReturn(repositoryContext_noProject);
     }
 
 

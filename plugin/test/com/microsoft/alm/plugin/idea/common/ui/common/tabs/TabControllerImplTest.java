@@ -4,18 +4,17 @@
 package com.microsoft.alm.plugin.idea.common.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.awt.event.ActionEvent;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,7 +40,6 @@ public class TabControllerImplTest extends IdeaAbstractTest {
 
     @Test
     public void testActionListener_CreateItem() {
-        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
         underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_CREATE_NEW_ITEM));
         verify(mockModel).createNewItem();
     }
@@ -49,7 +47,6 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     @Test
     public void testActionListener_Refresh() {
         when(mockModel.isTeamServicesRepository()).thenReturn(true);
-        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
         underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_REFRESH));
         underTest.update(null, TabForm.CMD_REFRESH);
         verify(mockModel).loadData();
@@ -58,7 +55,6 @@ public class TabControllerImplTest extends IdeaAbstractTest {
 
     @Test
     public void testActionListener_OpenItem() {
-        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
         underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER));
         verify(mockModel).openSelectedItemsLink();
     }
@@ -85,12 +81,11 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testDefaultPropertyUpdates() {
         underTest.update(null, null);
-        verify(mockTab).setStatus(any(VcsTabStatus.class));
+        verify(mockTab).setStatus(any());
         verify(mockModel).getTabStatus();
-        verify(mockTab).setViewModel(any(FilteredModel.class));
+        verify(mockTab).setViewModel(any());
         verify(mockModel).getModelForView();
     }
 
@@ -98,7 +93,7 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     public void testPropertyUpdates() {
         //Tab status updates
         underTest.update(null, TabModel.PROP_TAB_STATUS);
-        verify(mockTab, times(1)).setStatus(any(VcsTabStatus.class));
+        verify(mockTab, times(1)).setStatus(any());
         verify(mockModel, times(1)).getTabStatus();
     }
 }

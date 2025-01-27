@@ -7,16 +7,12 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.build.webapi.BuildHttpClient;
 import com.microsoft.alm.build.webapi.model.Build;
 import com.microsoft.alm.build.webapi.model.BuildQueryOrder;
-import com.microsoft.alm.build.webapi.model.BuildReason;
 import com.microsoft.alm.build.webapi.model.BuildRepository;
 import com.microsoft.alm.build.webapi.model.BuildResult;
 import com.microsoft.alm.build.webapi.model.BuildStatus;
 import com.microsoft.alm.build.webapi.model.DefinitionReference;
-import com.microsoft.alm.build.webapi.model.DefinitionType;
-import com.microsoft.alm.build.webapi.model.QueryDeletedOption;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -24,44 +20,55 @@ import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerContextManager.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BuildStatusLookupOperationTest extends AbstractTest {
     private ServerContextManager serverContextManager;
 
-    private void setupLocalTests(GitRepository gitRepository, List<Build> builds) {
-        MockitoAnnotations.initMocks(this);
+    @Mock
+    private MockedStatic<ServerContextManager> serverContextManagerStatic;
 
+    private void setupLocalTests(GitRepository gitRepository, List<Build> builds) {
         BuildHttpClient buildHttpClient = Mockito.mock(BuildHttpClient.class);
-        when(buildHttpClient.getBuilds(any(UUID.class), any(List.class), any(List.class),
-                anyString(), any(Date.class), any(Date.class), anyString(), any(BuildReason.class),
-                eq(BuildStatus.COMPLETED), any(BuildResult.class), any(List.class), any(List.class),
-                any(DefinitionType.class), eq(100), anyString(), anyInt(), any(QueryDeletedOption.class),
+        when(buildHttpClient.getBuilds(
+                ArgumentMatchers.<UUID>any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(BuildStatus.COMPLETED),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(100),
+                any(),
+                any(),
+                any(),
                 eq(BuildQueryOrder.FINISH_TIME_DESCENDING))).thenReturn(builds);
 
-        AuthenticationInfo authInfo = new AuthenticationInfo("user", "pass", "serverURI", "user");
         ServerContext authenticatedContext = Mockito.mock(ServerContext.class);
         when(authenticatedContext.getBuildHttpClient()).thenReturn(buildHttpClient);
         when(authenticatedContext.getTeamProjectReference()).thenReturn(new TeamProjectReference());
@@ -71,8 +78,8 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
         when(serverContextManager.createContextFromGitRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
 
-        PowerMockito.mockStatic(ServerContextManager.class);
-        when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
+        //noinspection ResultOfMethodCallIgnored
+        serverContextManagerStatic.when(ServerContextManager::getInstance).thenReturn(serverContextManager);
     }
 
     @Test(expected = IllegalArgumentException.class)

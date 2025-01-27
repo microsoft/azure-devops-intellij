@@ -26,7 +26,6 @@ import git4idea.repo.GitRepositoryImpl;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.security.util.Debug;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -52,10 +51,10 @@ public class CreatePullRequestTest extends L2Test {
         final String branchName = BRANCH_NAME_PREFIX + currentTimeMillis;
         final String prName = PR_NAME_PREFIX + currentTimeMillis;
         final String prDescription = PR_DESCRIPTION_PREFIX + currentTimeMillis;
-        Debug.println("tempFolder", tempFolder.getPath());
-        Debug.println("branchName", branchName);
-        Debug.println("prName", prName);
-        Debug.println("prDescription", prDescription);
+        System.out.println("tempFolder " + tempFolder);
+        System.out.println("branchName " + branchName);
+        System.out.println("prName " + prName);
+        System.out.println("prDescription " + prDescription);
 
         // clone repo and checkout branch
         final Project currentProject = L2GitUtil.cloneRepo(myProject, tempFolder, myGit, getRepoUrl(), getTeamProject());

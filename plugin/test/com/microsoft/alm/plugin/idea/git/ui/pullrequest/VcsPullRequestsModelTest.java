@@ -12,39 +12,38 @@ import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VcsPullRequestsModelTest extends IdeaAbstractTest {
     VcsPullRequestsModel underTest;
 
+    @Mock
     Project projectMock;
+
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelper;
 
     @Before
     public void setUp() {
-        PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class)))
+        vcsHelper.when(() -> VcsHelper.getRepositoryContext(any(Project.class)))
                 .thenReturn(
                         RepositoryContext.createGitContext(
                                 "/root/one",
                                 "repo1",
                                 "branch1",
                                 URI.create("http://repoUrl1")));
-
-        projectMock = Mockito.mock(Project.class);
     }
 
     @Test

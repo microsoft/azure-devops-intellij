@@ -6,7 +6,7 @@
 <idea-plugin allow-bundled-update="true">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <!-- <version>1.162.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
+    <!-- <version>1.162.2</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
     <category>VCS Integration</category>
     <vendor url="https://github.com/microsoft/azure-devops-intellij">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -45,31 +45,28 @@
       </ul>
       <br />
       <br />
-      <i>Compiled with Java 8</i>
+      <i>Compiled with Java 11</i>
       <br />
-      <i>Compatible with IntelliJ Ultimate and Community editions versions 2019.3 and later and Android Studio 4.0 and later</i>
+      <i>Compatible with IntelliJ Ultimate and Community editions versions 2021.2.4 and later and Android Studio 2021.2.1 and later</i>
       <br />
       <br />
       <b>End User License Agreement & Privacy Policy</b>
       <br />
-      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Privacy Statement</a>
+      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="https://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Privacy Statement</a>
       <br /><i>Note</i>: When using the TFVC support, this plugin will pass your Team Foundation credentials securely to the TF command line tool. That tool is installed separately and it is up to the user to verify that it is in a secure location on disk and has not been tampered with.
     ]]></description>
 
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Bump the minimal supported IntelliJ version to 2019.3.</li>
-        <li>Fix encoding issues when browsing the local diff (<a href="https://github.com/microsoft/azure-devops-intellij/issues/451">#451</a>).</li>
-        <li>Rework TFVC VCS root detection to use currently active TFVC client (i.e. it is able to use the reactive client which is much faster).</li>
-        <li>Enable the reactive TFVC client by default.</li>
+        <li>Fix issues caused by a TF license agreement not being accepted when using the plugin. Add actions to accept the agreement manually, for cases when auto-detection fails.</li>
       </ul>
       <br />
     ]]>
     </change-notes>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="182"/>
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="212"/>
 
     <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
          on how to target different products -->
@@ -139,7 +136,7 @@
 
     <actions>
         <action id="VSO.Open.In.Browser" class="com.microsoft.alm.plugin.idea.common.actions.OpenFileInBrowserAction">
-            <add-to-group group-id="EditorPopupMenu"/>
+            <add-to-group group-id="RevealGroup"/>
             <add-to-group group-id="ProjectViewPopupMenu"/>
             <add-to-group group-id="EditorTabPopupMenu"/>
         </action>
@@ -211,5 +208,12 @@
                 class="com.microsoft.alm.plugin.idea.tfvc.ui.servertree.CreateVirtualFolderAction" icon="AllIcons.Actions.NewFolder">
             <add-to-group group-id="TfvcTreePopupMenu" anchor="first"/>
         </action>
+
+        <action class="com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog$ShowTfvcCommandLineClientEulaAction"/>
+        <action class="com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog$ShowTfvcSdkEulaAction"/>
+
+        <!-- Internal actions -->
+        <action internal="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications$ShowSdkEulaNotification"/>
+        <action internal="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications$ShowCommandLineClientEulaNotification"/>
     </actions>
 </idea-plugin>

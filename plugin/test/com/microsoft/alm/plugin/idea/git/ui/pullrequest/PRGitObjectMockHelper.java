@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,19 +25,19 @@ public class PRGitObjectMockHelper {
     public static GitLocalBranch createLocalBranch(final String name) {
         GitLocalBranch branch = mock(GitLocalBranch.class);
         when(branch.getName()).thenReturn(name);
-        when(branch.getFullName()).thenReturn(name);
-        when(branch.isRemote()).thenReturn(false);
+        lenient().when(branch.getFullName()).thenReturn(name);
+        lenient().when(branch.isRemote()).thenReturn(false);
         return branch;
     }
 
     public static GitRemoteBranch createRemoteBranch(final String name, final GitRemote remote) {
         GitRemoteBranch branch = mock(GitRemoteBranch.class);
-        when(branch.getName()).thenReturn("refs/remotes/" + name);
+        lenient().when(branch.getName()).thenReturn("refs/remotes/" + name);
         when(branch.getFullName()).thenReturn(name);
-        when(branch.isRemote()).thenReturn(true);
+        lenient().when(branch.isRemote()).thenReturn(true);
         when(branch.getRemote()).thenReturn(remote);
-        when(branch.getNameForLocalOperations()).thenReturn(name);
-        when(branch.getNameForRemoteOperations()).thenReturn(name);
+        lenient().when(branch.getNameForLocalOperations()).thenReturn(name);
+        lenient().when(branch.getNameForRemoteOperations()).thenReturn(name);
         return branch;
     }
 

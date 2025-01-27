@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class ScheduleForDeletion {
     public static final Logger logger = LoggerFactory.getLogger(ScheduleForDeletion.class);
 
-    public static Collection<VcsException> execute(final Project project, final List<FilePath> files) {
+    public static Collection<VcsException> execute(final Project project, final List<? extends FilePath> files) {
         // choose roots
         // find if changes need reverted and revert them
         // schedule roots for deletion using their original names

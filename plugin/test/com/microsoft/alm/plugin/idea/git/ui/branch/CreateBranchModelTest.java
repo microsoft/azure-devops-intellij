@@ -23,13 +23,15 @@ import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.Collections;
@@ -43,12 +45,10 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GeneralGitHelper.class, TfGitHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class CreateBranchModelTest extends MockedIdeaApplicationTest {
 
     private CreateBranchModel underTest;
@@ -110,14 +110,19 @@ public class CreateBranchModelTest extends MockedIdeaApplicationTest {
         when(mockGitRepository.getInfo()).thenReturn(gitRepoInfo);
     }
 
+    @Mock
+    private MockedStatic<GeneralGitHelper> generalGitHelperStatic;
+
+    private MockedStatic<TfGitHelper> tfGitHelperStatic;
+
     @Before
     public void setUp() throws Exception {
-        PowerMockito.mockStatic(GeneralGitHelper.class, TfGitHelper.class);
+        generalGitHelperStatic.when(
+                () -> GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockRemoteMaster))
+                .thenReturn("281e2d5f8ba36655570ba808055e81ff64ba14d8");
 
-        when(GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockRemoteMaster)).thenReturn("281e2d5f8ba36655570ba808055e81ff64ba14d8");
-
-        PowerMockito.mockStatic(TfGitHelper.class, CALLS_REAL_METHODS);
-        when(TfGitHelper.getTfGitRepository(any())).thenReturn(null);
+        tfGitHelperStatic = Mockito.mockStatic(TfGitHelper.class, InvocationOnMock::callRealMethod);
+        tfGitHelperStatic.when(() -> TfGitHelper.getTfGitRepository(any())).thenReturn(null);
 
         when(mockGitRepository.getRemotes()).thenReturn(ImmutableList.of(tfsRemoteMaster, tfsRemoteBranch1, tfsRemoteBranch2));
 
@@ -132,6 +137,11 @@ public class CreateBranchModelTest extends MockedIdeaApplicationTest {
         when(mockContext.getUri()).thenReturn(uri);
         when(mockContext.getGitRepository()).thenReturn(mockVstsRepo);
         when(mockContext.getTeamProjectReference()).thenReturn(mockTeamProjectReference);
+    }
+
+    @After
+    public void tearDown() {
+        tfGitHelperStatic.close();
     }
 
     @Test

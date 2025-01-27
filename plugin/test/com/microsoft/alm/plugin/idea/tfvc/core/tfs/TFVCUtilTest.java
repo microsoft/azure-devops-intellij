@@ -14,10 +14,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,10 +26,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({TfvcWorkspaceLocator.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TFVCUtilTest {
 
     private final Workspace workspace = new Workspace(
@@ -45,12 +41,13 @@ public class TFVCUtilTest {
     @Mock
     private Project mockProject;
 
+    @Mock
+    private MockedStatic<TfvcWorkspaceLocator> tfvcWorkspaceLocatorStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-
-        PowerMockito.mockStatic(TfvcWorkspaceLocator.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false)).thenReturn(workspace);
+        tfvcWorkspaceLocatorStatic.when(() -> TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false))
+                .thenReturn(workspace);
     }
 
     @Test

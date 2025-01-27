@@ -16,24 +16,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.Observer;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TabModelImplTest extends IdeaAbstractTest {
     private final String FILTER = "filter";
     private TabModelImpl underTest;
@@ -47,11 +45,12 @@ public class TabModelImplTest extends IdeaAbstractTest {
     @Mock
     private GitRepository mockGitRepository;
 
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelper;
+
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
-        PowerMockito.mockStatic(VcsHelper.class);
-
         underTest = Mockito.spy(new TabModelImpl(mockProject, mockModel, null) {
             protected void createDataProvider() {
 
@@ -107,7 +106,7 @@ public class TabModelImplTest extends IdeaAbstractTest {
 
     @Test
     public void testisTeamServicesRepository_False() {
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(null);
+        vcsHelper.when(() -> VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(null);
         Assert.assertFalse(underTest.isTeamServicesRepository());
     }
 
@@ -121,7 +120,7 @@ public class TabModelImplTest extends IdeaAbstractTest {
     @Test
     public void testSetFilter_Same() {
         underTest.setFilter(FILTER);
-        verifyZeroInteractions(mockModel);
+        verifyNoMoreInteractions(mockModel);
         Assert.assertEquals(FILTER, underTest.getFilter());
     }
 }

@@ -19,18 +19,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SystemHelper.class, TfTool.class, PluginServiceProvider.class, Platform.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TfToolTest extends AbstractTest {
     private static File exeDirectory;
     private static File exeFile;
@@ -56,15 +54,22 @@ public class TfToolTest extends AbstractTest {
         exeDirectory.delete();
     }
 
+    @Mock
+    private MockedStatic<SystemHelper> systemHelper;
+
+    @Mock
+    private MockedStatic<PluginServiceProvider> pluginServiceProviderStatic;
+
+    @Mock
+    private MockedStatic<Platform> platform;
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Before
     public void setUp() {
-        PowerMockito.mockStatic(SystemHelper.class);
-        PowerMockito.mockStatic(PluginServiceProvider.class);
-        when(PluginServiceProvider.getInstance()).thenReturn(pluginServiceProvider);
+        pluginServiceProviderStatic.when(PluginServiceProvider::getInstance).thenReturn(pluginServiceProvider);
         when(pluginServiceProvider.getPropertyService()).thenReturn(propertyService);
 
-        PowerMockito.mockStatic(Platform.class);
-        when(Platform.isWindows()).thenReturn(true);
+        platform.when(Platform::isWindows).thenReturn(true);
     }
 
     @Test(expected = ToolException.class)
@@ -86,38 +91,33 @@ public class TfToolTest extends AbstractTest {
     }
 
     @Test(expected = ToolVersionException.class)
-    public void testCheckVersion_tooOld() throws Exception {
+    public void testCheckVersion_tooOld() {
         ToolVersion toolVersion = adjustToolVersion(TfTool.TF_MIN_VERSION, 0, 0, -1);
-        mockTfVersionCommand(toolVersion);
-        TfTool.checkVersion();
+        mockTfVersionCommand(toolVersion, TfTool::checkVersion);
     }
 
     @Test
-    public void testCheckVersion_exact() throws Exception {
+    public void testCheckVersion_exact() {
         ToolVersion toolVersion = adjustToolVersion(TfTool.TF_MIN_VERSION, 0, 0, 0);
-        mockTfVersionCommand(toolVersion);
-        TfTool.checkVersion();
+        mockTfVersionCommand(toolVersion, TfTool::checkVersion);
     }
 
     @Test
-    public void testCheckVersion_revGreater() throws Exception {
+    public void testCheckVersion_revGreater() {
         ToolVersion toolVersion = adjustToolVersion(TfTool.TF_MIN_VERSION, 0, 0, +1);
-        mockTfVersionCommand(toolVersion);
-        TfTool.checkVersion();
+        mockTfVersionCommand(toolVersion, TfTool::checkVersion);
     }
 
     @Test
-    public void testCheckVersion_minorGreater() throws Exception {
+    public void testCheckVersion_minorGreater() {
         ToolVersion toolVersion = adjustToolVersion(TfTool.TF_MIN_VERSION, 0, +1, 0);
-        mockTfVersionCommand(toolVersion);
-        TfTool.checkVersion();
+        mockTfVersionCommand(toolVersion, TfTool::checkVersion);
     }
 
     @Test
-    public void testCheckVersion_majorGreater() throws Exception {
+    public void testCheckVersion_majorGreater() {
         ToolVersion toolVersion = adjustToolVersion(TfTool.TF_MIN_VERSION, +1, 0, 0);
-        mockTfVersionCommand(toolVersion);
-        TfTool.checkVersion();
+        mockTfVersionCommand(toolVersion, TfTool::checkVersion);
     }
 
     @Test
@@ -163,9 +163,11 @@ public class TfToolTest extends AbstractTest {
         return new ToolVersion(version.getMajor() + major, version.getMinor() + minor, version.getRevision() + revision, version.getBuild());
     }
 
-    private void mockTfVersionCommand(final ToolVersion version) throws Exception {
-        final TfVersionCommand command = Mockito.mock(TfVersionCommand.class);
-        PowerMockito.whenNew(TfVersionCommand.class).withNoArguments().thenReturn(command);
-        when(command.runSynchronously()).thenReturn(version);
+    private void mockTfVersionCommand(final ToolVersion version, Runnable action) {
+        try (var ignored = Mockito.mockConstruction(
+                TfVersionCommand.class,
+                (command, c) -> when(command.runSynchronously()).thenAnswer(a -> version))) {
+            action.run();
+        }
     }
 }

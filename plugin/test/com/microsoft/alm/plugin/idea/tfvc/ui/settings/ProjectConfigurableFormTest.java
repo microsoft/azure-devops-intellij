@@ -12,18 +12,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PluginServiceProvider.class, TfTool.class})
-@PowerMockIgnore("javax.swing.*")
+@RunWith(MockitoJUnitRunner.class)
 public class ProjectConfigurableFormTest {
     ProjectConfigurableForm form;
 
@@ -36,12 +32,14 @@ public class ProjectConfigurableFormTest {
     @Mock
     PropertyService mockPropertyService;
 
+    @Mock
+    private MockedStatic<PluginServiceProvider> pluginServiceProviderStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(PluginServiceProvider.class, TfTool.class);
         when(mockPluginServiceProvider.getPropertyService()).thenReturn(mockPropertyService);
-        when(PluginServiceProvider.getInstance()).thenReturn(mockPluginServiceProvider);
+        //noinspection ResultOfMethodCallIgnored
+        pluginServiceProviderStatic.when(PluginServiceProvider::getInstance).thenReturn(mockPluginServiceProvider);
         form = new ProjectConfigurableForm(mockProject);
     }
 
@@ -56,18 +54,22 @@ public class ProjectConfigurableFormTest {
     @Test
     public void testLoad_TfDetected() {
         when(mockPropertyService.getProperty(PropertyService.PROP_TF_HOME)).thenReturn(StringUtils.EMPTY);
-        when(TfTool.tryDetectTf()).thenReturn("/path/to/detected/cmd/tf");
+        try (var ignored = Mockito.mockStatic(TfTool.class)) {
+            when(TfTool.tryDetectTf()).thenReturn("/path/to/detected/cmd/tf");
 
-        form.load();
-        assertEquals("/path/to/detected/cmd/tf", form.getCurrentExecutablePath());
+            form.load();
+            assertEquals("/path/to/detected/cmd/tf", form.getCurrentExecutablePath());
+        }
     }
 
     @Test
     public void testLoad_TfNotFound() {
         when(mockPropertyService.getProperty(PropertyService.PROP_TF_HOME)).thenReturn(StringUtils.EMPTY);
-        when(TfTool.tryDetectTf()).thenReturn(null);
+        try (var ignored = Mockito.mockStatic(TfTool.class)) {
+            when(TfTool.tryDetectTf()).thenReturn(null);
 
-        form.load();
-        assertEquals(StringUtils.EMPTY, form.getCurrentExecutablePath());
+            form.load();
+            assertEquals(StringUtils.EMPTY, form.getCurrentExecutablePath());
+        }
     }
 }

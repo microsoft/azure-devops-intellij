@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsKey;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateSession;
@@ -28,12 +27,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,11 +37,12 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyCollectionOf;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,8 +50,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     TFSUpdateEnvironment updateEnvironment;
 
@@ -88,27 +84,36 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     @Mock
     FileGroup mockFileGroupUpdate;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<ConflictsEnvironment> conflictsEnvironmentStatic;
+
+    @Mock
+    private MockedStatic<TfsFileUtil> tfsFileUtilStatic;
+
+    @Mock
+    private MockedStatic<TFVCUtil> tfvcUtilStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
-        when(ConflictsEnvironment.getConflictsHandler()).thenReturn(mockConflictsHandler);
+        //noinspection ResultOfMethodCallIgnored
+        conflictsEnvironmentStatic.when(ConflictsEnvironment::getConflictsHandler).thenReturn(mockConflictsHandler);
         when(mockUpdatedFiles.getGroupById(FileGroup.REMOVED_FROM_REPOSITORY_ID)).thenReturn(mockFileGroupRemove);
         when(mockUpdatedFiles.getGroupById(FileGroup.CREATED_ID)).thenReturn(mockFileGroupCreate);
         when(mockUpdatedFiles.getGroupById(FileGroup.UPDATED_ID)).thenReturn(mockFileGroupUpdate);
-        when(TFVCUtil.filterValidTFVCPaths(eq(mockProject), anyCollectionOf(FilePath.class))).then(new Answer<Collection<String>>() {
-            @Override
-            public Collection<String> answer(InvocationOnMock invocation) throws Throwable {
-                @SuppressWarnings("unchecked") Collection<FilePath> argument = (Collection<FilePath>) invocation.getArguments()[1];
-                ArrayList<String> result = new ArrayList<String>();
-                for (FilePath filePath : argument) {
-                    result.add(filePath.getPath());
-                }
-                return result;
-            }
-        });
+        tfvcUtilStatic.when(() -> TFVCUtil.filterValidTFVCPaths(eq(mockProject), anyCollection()))
+                .then((Answer<Collection<String>>) invocation -> {
+                    @SuppressWarnings("unchecked") Collection<FilePath> argument = (Collection<FilePath>) invocation.getArguments()[1];
+                    ArrayList<String> result = new ArrayList<String>();
+                    for (FilePath filePath : argument) {
+                        result.add(filePath.getPath());
+                    }
+                    return result;
+                });
 
         updateEnvironment = new TFSUpdateEnvironment(mockProject, mockTFSVcs);
     }
@@ -120,7 +125,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         UpdateSession session = updateEnvironment.updateDirectories(filePaths, mockUpdatedFiles, mockProgressIndicator, mockUpdatesContext);
         verifyNoMoreInteractions(mockUpdatedFiles, mockConflictsHandler);
         assertTrue(session.getExceptions().isEmpty());
-        verifyStatic(times(1));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.refreshAndInvalidate(mockProject, filePaths, false);
     }
 
@@ -131,14 +136,14 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         FilePath[] filePaths = setupUpdate(syncResults);
 
         UpdateSession session = updateEnvironment.updateDirectories(filePaths, mockUpdatedFiles, mockProgressIndicator, mockUpdatesContext);
-        verify(mockFileGroupRemove).add(eq("/path/to/file2"), any(VcsKey.class), isNull(VcsRevisionNumber.class));
-        verify(mockFileGroupCreate).add(eq("/path/to/newFile"), any(VcsKey.class), isNull(VcsRevisionNumber.class));
-        verify(mockFileGroupUpdate).add(eq("/path/to/file1"), any(VcsKey.class), isNull(VcsRevisionNumber.class));
-        verify(mockFileGroupUpdate).add(eq("/path/to/directory"), any(VcsKey.class), isNull(VcsRevisionNumber.class));
+        verify(mockFileGroupRemove).add(eq("/path/to/file2"), any(VcsKey.class), isNull());
+        verify(mockFileGroupCreate).add(eq("/path/to/newFile"), any(VcsKey.class), isNull());
+        verify(mockFileGroupUpdate).add(eq("/path/to/file1"), any(VcsKey.class), isNull());
+        verify(mockFileGroupUpdate).add(eq("/path/to/directory"), any(VcsKey.class), isNull());
         verifyNoMoreInteractions(mockFileGroupRemove, mockFileGroupCreate, mockFileGroupUpdate, mockConflictsHandler);
         verifyNoMoreInteractions(mockConflictsHandler);
         assertEquals(1, session.getExceptions().size());
-        verifyStatic(times(1));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.refreshAndInvalidate(mockProject, filePaths, false);
     }
 
@@ -152,7 +157,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         verify(mockConflictsHandler).resolveConflicts(eq(mockProject), any(ResolveConflictHelper.class));
         verifyNoMoreInteractions(mockUpdatedFiles);
         assertTrue(session.getExceptions().isEmpty());
-        verifyStatic(times(1));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.refreshAndInvalidate(mockProject, filePaths, false);
     }
 
@@ -166,7 +171,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         when(filePath2.getPath()).thenReturn("/path/to/directory");
 
         FilePath filePath3 = mock(FilePath.class);
-        when(filePath3.isDirectory()).thenReturn(false);
+        lenient().when(filePath3.isDirectory()).thenReturn(false);
         when(filePath3.getPath()).thenReturn("/path/to/file2");
         FilePath[] filePaths = {filePath1, filePath2, filePath3};
 

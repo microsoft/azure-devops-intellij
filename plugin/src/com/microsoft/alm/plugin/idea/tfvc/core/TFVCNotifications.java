@@ -8,7 +8,10 @@ import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.util.ui.UIUtil;
@@ -16,7 +19,9 @@ import com.intellij.util.ui.update.MergingUpdateQueue;
 import com.intellij.util.ui.update.Update;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.actions.AddFileToTfIgnoreAction;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TFVCNotifications {
     private static final NotificationGroup TFS_NOTIFICATIONS = new NotificationGroup(
@@ -25,7 +30,7 @@ public class TFVCNotifications {
             true
     );
 
-    private static MergingUpdateQueue ourQueue = new MergingUpdateQueue(
+    private static final MergingUpdateQueue ourQueue = new MergingUpdateQueue(
             "TFVCNotifications.myQueue",
             2000,
             false,
@@ -48,5 +53,53 @@ public class TFVCNotifications {
             }
         });
         UIUtil.invokeLaterIfNeeded(ourQueue::activate);
+    }
+
+    public static void notify(
+            @NotNull Notification notification,
+            @Nullable Project project,
+            @NotNull Object deduplicationKey) {
+        ourQueue.queue(new Update(deduplicationKey) {
+            @Override
+            public void run() {
+                notification.notify(project);
+            }
+        });
+        ApplicationManager.getApplication().invokeLater(ourQueue::activate, ModalityState.NON_MODAL);
+    }
+
+    public static Notification createSdkEulaNotification() {
+        return TFS_NOTIFICATIONS.createNotification(
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_EULA_ACCEPTANCE_IS_REQUIRED),
+                NotificationType.WARNING
+        ).addAction(new EULADialog.ShowTfvcSdkEulaAction());
+    }
+
+    public static Notification createCommandLineClientEulaNotification() {
+        return TFS_NOTIFICATIONS.createNotification(
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_EULA_ACCEPTANCE_IS_REQUIRED),
+                NotificationType.WARNING
+        ).addAction(new EULADialog.ShowTfvcCommandLineClientEulaAction());
+    }
+
+    public static class ShowSdkEulaNotification extends AnAction {
+        public ShowSdkEulaNotification() {
+            super("[Internal] Show SDK License Agreement Notification");
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            createSdkEulaNotification().notify(e.getProject());
+        }
+    }
+
+    public static class ShowCommandLineClientEulaNotification extends AnAction {
+        public ShowCommandLineClientEulaNotification() {
+            super("[Internal] Show TF CLC EULA Notification");
+        }
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            createCommandLineClientEulaNotification().notify(e.getProject());
+        }
     }
 }

@@ -6,25 +6,21 @@ package com.microsoft.alm.plugin.operations;
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
-import com.microsoft.alm.workitemtracking.webapi.models.QueryExpand;
 import com.microsoft.alm.workitemtracking.webapi.models.QueryHierarchyItem;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItemQueryResult;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItemReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -34,13 +30,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerContextManager.class})
+@RunWith(MockitoJUnitRunner.class)
 public class WorkItemQueriesLookupOperationTest extends AbstractTest {
     private ServerContextManager serverContextManager;
     private RepositoryContext defaultRepositoryContext =
@@ -50,9 +46,11 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
                     "branch1",
                     URI.create("http://one.vs.com/_git/repo1"));
 
-    private void setupLocalTests(List<QueryHierarchyItem> queries) {
-        MockitoAnnotations.initMocks(this);
+    @Mock
+    private MockedStatic<ServerContextManager> serverContextManagerStatic;
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private void setupLocalTests(List<QueryHierarchyItem> queries) {
         WorkItemReference ref = new WorkItemReference();
         ref.setId(1);
         List<WorkItemReference> workItemRefs = new ArrayList<WorkItemReference>();
@@ -61,22 +59,17 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         result.setWorkItems(workItemRefs);
 
         WorkItemTrackingHttpClient witHttpClient = Mockito.mock(WorkItemTrackingHttpClient.class);
-        when(witHttpClient.getQueries(any(UUID.class), any(QueryExpand.class), Matchers.eq(1), Matchers.eq(false)))
+        when(witHttpClient.getQueries(ArgumentMatchers.<UUID>any(), any(), eq(1), eq(false)))
                 .thenReturn(queries);
 
-        AuthenticationInfo authInfo = new AuthenticationInfo("user", "pass", "serverURI", "user");
         ServerContext authenticatedContext = Mockito.mock(ServerContext.class);
         when(authenticatedContext.getWitHttpClient()).thenReturn(witHttpClient);
         when(authenticatedContext.getTeamProjectReference()).thenReturn(new TeamProjectReference());
-        when(authenticatedContext.getGitRepository()).thenReturn(new GitRepository());
 
         serverContextManager = Mockito.mock(ServerContextManager.class);
-        when(serverContextManager.getAuthenticatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
-        when(serverContextManager.getUpdatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
         when(serverContextManager.createContextFromGitRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
 
-        PowerMockito.mockStatic(ServerContextManager.class);
-        when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
+        serverContextManagerStatic.when(ServerContextManager::getInstance).thenReturn(serverContextManager);
     }
 
     @Test(expected = IllegalArgumentException.class)

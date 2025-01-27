@@ -17,10 +17,10 @@ import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.LicenseKind;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,11 +30,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import sun.security.util.Debug;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -242,7 +242,7 @@ public abstract class Command<T> {
             Throwable error = syncError.get();
             if (error != null) {
                 if (error.getMessage().contains("tf eula")) {
-                    throw new ToolEulaNotAcceptedException(error);
+                    throw new ToolEulaNotAcceptedException(LicenseKind.CommandLineClient, error);
                 }
                 if (error instanceof RuntimeException) {
                     logger.warn("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
@@ -261,7 +261,6 @@ public abstract class Command<T> {
             final long endTime = System.nanoTime();
             double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
             logger.info(seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
-            Debug.println("", seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
         }
     }
 
@@ -280,7 +279,7 @@ public abstract class Command<T> {
     /**
      * Determines whether a cached tool runner instance should be created after execution of this command. This runner
      * will be used when a new command is issued against the same working directory/tool location. See
-     * {@link ToolRunnerCache#getKey} for details on cache key calculation.
+     * {@code  ToolRunnerCache::getKey} for details on cache key calculation.
      * <p/>
      * Usually, it is a good idea to prepare a runner in advance, because there's always a possibility that new
      * commands will be issued against the same working directory as defined by the current command.
@@ -314,7 +313,7 @@ public abstract class Command<T> {
             xmlInput = new InputSource(new StringReader(stdout));
         }
 
-        final XPath xpath = new XPathFactoryImpl().newXPath();
+        final XPath xpath = XPathFactory.newInstance().newXPath();
         try {
             final Object result = xpath.evaluate(xpathQuery, xmlInput, XPathConstants.NODESET);
             if (result != null && result instanceof NodeList) {

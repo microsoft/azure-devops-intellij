@@ -16,12 +16,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GitRevisionNumber.class)
+@RunWith(MockitoJUnitRunner.class)
 public class GeneralGitHelperTest extends IdeaAbstractTest {
     private static final String mockBranchName = "mockBranchName";
 
@@ -49,10 +46,17 @@ public class GeneralGitHelperTest extends IdeaAbstractTest {
 
         GitRevisionNumber revisionNumber = new GitRevisionNumber(lastHash);
 
-        PowerMockito.mockStatic(GitRevisionNumber.class);
-        Mockito.when(GitRevisionNumber.resolve(Mockito.eq(mockProject), Mockito.eq(mockVirtualFile),
-                Mockito.eq(mockBranchName))).thenReturn(revisionNumber);
+        try (var gitRevisionNumberStatic = Mockito.mockStatic(GitRevisionNumber.class)) {
+            gitRevisionNumberStatic.when(
+                            () -> GitRevisionNumber.resolve(
+                                    Mockito.eq(mockProject),
+                                    Mockito.eq(mockVirtualFile),
+                                    Mockito.eq(mockBranchName)))
+                    .thenReturn(revisionNumber);
 
-        Assert.assertEquals(lastHash, GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockGitBranch));
+            Assert.assertEquals(
+                    lastHash,
+                    GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockGitBranch));
+        }
     }
 }

@@ -27,9 +27,8 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 public class PullRequestHelperTest extends IdeaAbstractTest {
@@ -151,7 +150,7 @@ public class PullRequestHelperTest extends IdeaAbstractTest {
         pr.setPullRequestId(100);
         final List<GitPullRequest> pullRequests = Collections.singletonList(pr);
 
-        when(gitClient.getPullRequests(eq(repoId), any(GitPullRequestSearchCriteria.class), anyInt(), eq(0), eq(1))).thenReturn(pullRequests);
+        when(gitClient.getPullRequests(eq(repoId), any(GitPullRequestSearchCriteria.class), any(), eq(0), eq(1))).thenReturn(pullRequests);
 
         final Pair<PRCreateStatus, String> parsed
                 = underTest.parseException(exception, "source", targetBranch, context, gitClient);

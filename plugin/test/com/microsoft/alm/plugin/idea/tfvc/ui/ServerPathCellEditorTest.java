@@ -9,25 +9,21 @@ import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import org.apache.commons.lang.StringUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Messages.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ServerPathCellEditorTest {
 
     @Mock
@@ -37,11 +33,8 @@ public class ServerPathCellEditorTest {
     @Mock
     private TeamProjectReference mockTeamProjectReference;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(Messages.class);
-    }
+    @Mock
+    private MockedStatic<Messages> messagesStatic;
 
     @Test
     public void testGetServerPath_PathPresent() {
@@ -85,7 +78,7 @@ public class ServerPathCellEditorTest {
         doReturn(StringUtils.EMPTY).when(spy).getServerPath();
 
         spy.createBrowserDialog();
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_MSG)),
                 eq(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_TITLE)));
     }

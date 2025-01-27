@@ -16,17 +16,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ProjectLevelVcsManager.class, TfGitHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VcsHelperTest extends IdeaAbstractTest {
 
     @Mock
@@ -36,11 +33,16 @@ public class VcsHelperTest extends IdeaAbstractTest {
     @Mock
     private GitRepository mockGitRepository;
 
+    @Mock
+    private MockedStatic<ProjectLevelVcsManager> projectLevelVcsManagerStatic;
+
+    @Mock
+    private MockedStatic<TfGitHelper> tfGitHelperStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ProjectLevelVcsManager.class, TfGitHelper.class);
-        when(ProjectLevelVcsManager.getInstance(mockProject)).thenReturn(mockProjectLevelVcsManager);
+        projectLevelVcsManagerStatic.when(() -> ProjectLevelVcsManager.getInstance(mockProject))
+                .thenReturn(mockProjectLevelVcsManager);
     }
 
     @Test

@@ -8,16 +8,14 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,11 +32,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsUtil.class})
-public class TFSChangeListTest extends IdeaAbstractTest {
+@RunWith(MockitoJUnitRunner.class)
+public class TFSChangeListTest extends MockedIdeaApplicationTest {
     private static final int CHANGESET_ID = 123;
     private static final String AUTHOR = "John Smith";
     private static final String CHANGESET_DATE = "2016-08-15T11:50:09.427-0400";
@@ -69,20 +65,20 @@ public class TFSChangeListTest extends IdeaAbstractTest {
 
     private TFSChangeList changeList;
 
+    @Mock
+    private MockedStatic<VcsUtil> vcsUtilStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(VcsUtil.class);
-
-        when(VcsUtil.getFilePath(addedFilePath1.getPath(), addedFilePath1.isDirectory())).thenReturn(addedFilePath1);
-        when(VcsUtil.getFilePath(addedFilePath2.getPath(), addedFilePath2.isDirectory())).thenReturn(addedFilePath2);
-        when(VcsUtil.getFilePath(addedFilePath3.getPath(), addedFilePath3.isDirectory())).thenReturn(addedFilePath3);
-        when(VcsUtil.getFilePath(deletedFilePath1.getPath(), deletedFilePath1.isDirectory())).thenReturn(deletedFilePath1);
-        when(VcsUtil.getFilePath(deletedFilePath2.getPath(), deletedFilePath2.isDirectory())).thenReturn(deletedFilePath2);
-        when(VcsUtil.getFilePath(renamedFilePath1.getPath(), renamedFilePath1.isDirectory())).thenReturn(renamedFilePath1);
-        when(VcsUtil.getFilePath(editedFilePath1.getPath(), editedFilePath1.isDirectory())).thenReturn(addedFilePath1);
-        when(VcsUtil.getFilePath(editedFilePath2.getPath(), editedFilePath2.isDirectory())).thenReturn(editedFilePath2);
-        when(VcsUtil.getFilePath(editedFilePath3.getPath(), editedFilePath3.isDirectory())).thenReturn(editedFilePath3);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath1.getPath(), addedFilePath1.isDirectory())).thenReturn(addedFilePath1);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath2.getPath(), addedFilePath2.isDirectory())).thenReturn(addedFilePath2);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(addedFilePath3.getPath(), addedFilePath3.isDirectory())).thenReturn(addedFilePath3);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(deletedFilePath1.getPath(), deletedFilePath1.isDirectory())).thenReturn(deletedFilePath1);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(deletedFilePath2.getPath(), deletedFilePath2.isDirectory())).thenReturn(deletedFilePath2);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(renamedFilePath1.getPath(), renamedFilePath1.isDirectory())).thenReturn(renamedFilePath1);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(editedFilePath1.getPath(), editedFilePath1.isDirectory())).thenReturn(addedFilePath1);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(editedFilePath2.getPath(), editedFilePath2.isDirectory())).thenReturn(editedFilePath2);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(editedFilePath3.getPath(), editedFilePath3.isDirectory())).thenReturn(editedFilePath3);
 
         changeList = new TFSChangeList(addedFiles, deletedFiles, renamedFiles,
                 editedFiles, CHANGESET_ID, AUTHOR, COMMENT,

@@ -63,7 +63,7 @@ public class TfvcRootChecker extends VcsRootChecker {
         }
 
         // Will get here only if cachedStatus == UNKNOWN.
-        return EULADialog.executeWithGuard(null, () -> {
+        return Boolean.TRUE.equals(EULADialog.executeWithGuard(null, () -> {
             TfsDetailedWorkspaceInfo workspace = null;
             Path workspacePath = Paths.get(path);
             try {
@@ -81,7 +81,7 @@ public class TfvcRootChecker extends VcsRootChecker {
             myCache.putMappings(workspace.getMappings());
             return workspace.getMappings().stream()
                     .anyMatch(mapping -> FileUtil.pathsEqual(path, mapping.getLocalPath().getPath()));
-        });
+        }));
     }
 
     @Override
