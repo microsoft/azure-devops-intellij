@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 public class TfGitHelper {
     private static final String MASTER_BRANCH_PATTERN = "%s/master";
+    private static final String MAIN_BRANCH_PATTERN = "%s/main";
 
     /**
      * Returns <code>true</code> if the specified GitRepository is a TF GitRepository (VSO or OnPrem).
@@ -140,8 +141,10 @@ public class TfGitHelper {
         final GitRemote firstTfRemote = tfGitRemotes.iterator().next();
 
         final String masterBranchName = String.format(MASTER_BRANCH_PATTERN, firstTfRemote.getName());
+        final String mainBranchName = String.format(MAIN_BRANCH_PATTERN, firstTfRemote.getName());
+
         for (GitRemoteBranch remoteBranch : remoteBranches) {
-            if (remoteBranch.getName().equals(masterBranchName)) {
+            if (remoteBranch.getName().equals(masterBranchName) || remoteBranch.getName().equals(mainBranchName)) {
                 return remoteBranch;
             }
         }
